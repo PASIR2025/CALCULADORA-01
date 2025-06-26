@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calculadora de Protecciones para Motor Trifásico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#66b3ff" />
+  <link rel="manifest" href="manifest.json" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #1e1e1e;
+      color: #f1f1f1;
+    }
+    h2 {
+      color: #66b3ff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.3em;
+    }
+    h2 img {
+      width: 40px;
+      height: auto;
+    }
+    h2 span {
+      line-height: 1.2;
+      white-space: pre-line;
+    }
+    label, input, select {
+      display: block;
+      margin-top: 10px;
+      max-width: 400px;
+      width: 100%;
+    }
+    input, select, button {
+      padding: 8px;
+      font-size: 1em;
+    }
+    .resultado {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #333333;
+      border: 1px solid #66cccc;
+      border-radius: 5px;
+      max-width: 400px;
+    }
+    .botones {
+      margin-top: 20px;
+    }
+    .proteccion {
+      display: flex;
+      align-items: center;
+      margin-top: 15px;
+      max-width: 400px;
+    }
+    .proteccion img {
+      width: 60px;
+      height: auto;
+      margin-right: 15px;
+    }
+    .info-unidad {
+      font-size: 0.9em;
+      color: #aaa;
+      margin-top: 2px;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TÍTULO CON LOGO PEQUEÑO -->
+  <h2>
+    <img src="imagenes/logo.png" alt="Logo pequeño" />
+    <span>
+      DIMENSIONAMIENTO
+      DE DISPOSITIVOS
+      PARA MOTOR TRIFÁSICO
+    </span>
+  </h2>
+
+  <!-- Potencia -->
+  <label for="potenciaHp">Potencia del motor (HP):</label>
+  <input type="number" id="potenciaHp" step="0.01" placeholder="Ej: 7.5" oninput="hpToKw()" />
+  <div class="info-unidad">Ingresa potencia en HP y verás la conversión a kW abajo.</div>
+
+  <label for="potenciaKw" style="margin-top:20px;">Potencia del motor (kW):</label>
+  <input type="number" id="potenciaKw" step="0.01" placeholder="Ej: 5.6" oninput="kwToHp()" />
+  <div class="info-unidad">Ingresa potencia en kW y verás la conversión a HP arriba.</div>
+
+  <label for="voltaje">Tensión trifásica (V):</label>
+  <select id="voltaje">
+    <option value="220">220 V</option>
+    <option value="380" selected>380 V</option>
+    <option value="440">440 V</option>
+  </select>
+
+  <label for="eficiencia">Eficiencia estimada (η):</label>
+  <input type="number" id="eficiencia" value="0.90" min="0.5" max="1" step="0.01" />
+
+  <label for="fp">Factor de potencia (cos φ):</label>
+  <input type="number" id="fp" value="0.85" min="0.1" max="1" step="0.01" />
+
+  <label for="arranque">Tipo de arranque:</label>
+  <select id="arranque">
+    <option value="1">Directo</option>
+    <option value="0.58">Estrella-triángulo</option>
+    <option value="0.7">Arrancador suave</option>
+  </select>
+
+  <div class="botones">
+    <button onclick="calcular()">Calcular</button>
+    <button onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+  </div>
+
+  <div id="resultado" class="resultado" style="display:none;"></div>
+
+  <script>
+    const HP_TO_KW = 0.746;
+
+    function hpToKw() {
+      const hp = parseFloat(document.getElementById("potenciaHp").value);
+      if (!isNaN(hp)) {
+        document.getElementById("potenciaKw").value = (hp * HP_TO_KW).toFixed(2);
+      } else {
+        document.getElementById("potenciaKw").value = "";
+      }
+      document.getElementById("resultado").style.display = "none";
+    }
+
+    function kwToHp() {
+      const kw = parseFloat(document.getElementById("potenciaKw").value);
+      if (!isNaN(kw)) {
+        document.getElementById("potenciaHp").value = (kw / HP_TO_KW).toFixed(2);
+      } else {
+        document.getElementById("potenciaHp").value = "";
+      }
+      document.getElementById("resultado").style.display = "none";
+    }
+
+    function calcular() {
+      const potenciaKw = parseFloat(document.getElementById("potenciaKw").value);
+      const voltaje = parseFloat(document.getElementById("voltaje").value);
+      const eficiencia = parseFloat(document.getElementById("eficiencia").value);
+      const fp = parseFloat(document.getElementById("fp").value);
+      const arranque = parseFloat(document.getElementById("arranque").value);
+
+      if (
+        isNaN(potenciaKw) || potenciaKw <= 0 ||
+        isNaN(voltaje) || isNaN(eficiencia) || isNaN(fp) ||
+        eficiencia <= 0 || eficiencia > 1 || fp <= 0 || fp > 1
+      ) {
+        alert("Por favor ingresa valores válidos. La eficiencia y el factor de potencia deben ser decimales entre 0 y 1.");
+        return;
+      }
+
+      const intensidadBase = (potenciaKw * 1000) / (Math.sqrt(3) * voltaje * fp * eficiencia);
+      const intensidad = intensidadBase * arranque;
+
+      const contactorMin = (intensidad * 1.15).toFixed(1);
+      const contactorMax = (intensidad * 1.25).toFixed(1);
+
+      const releMin = (intensidad * 1.05).toFixed(1);
+      const releMax = (intensidad * 1.15).toFixed(1);
+
+      const itmMin = Math.ceil(intensidad * 1.25);
+      const itmMax = Math.ceil(intensidad * 1.5);
+
+      const resultadoHTML = `
+        <strong>⚙ Resultados para motor de ${potenciaKw.toFixed(2)} kW (${(potenciaKw / HP_TO_KW).toFixed(2)} HP) a ${voltaje} V</strong><br>
+        <strong>Corriente estimada:</strong> ${intensidad.toFixed(2)} A
+
+        <div class="proteccion">
+          <img src="imagenes/contactor.png" alt="Contactor" />
+          <div><strong>Contactor:</strong> ${contactorMin} A - ${contactorMax} A</div>
+        </div>
+
+        <div class="proteccion">
+          <img src="imagenes/rele.png" alt="Relé térmico" />
+          <div><strong>Relé térmico:</strong> ${releMin} A - ${releMax} A</div>
+        </div>
+
+        <div class="proteccion">
+          <img src="imagenes/itm.png" alt="Interruptor termomagnético" />
+          <div><strong>ITM:</strong> ${itmMin} A - ${itmMax} A</div>
+        </div>
+      `;
+
+      const resultadoDiv = document.getElementById("resultado");
+      resultadoDiv.innerHTML = resultadoHTML;
+      resultadoDiv.style.display = "block";
+    }
+  </script>
+
+  <!-- Service Worker para PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').then(function (registration) {
+          console.log('✅ ServiceWorker registrado con éxito:', registration.scope);
+        }, function (err) {
+          console.log('❌ ServiceWorker falló:', err);
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>
