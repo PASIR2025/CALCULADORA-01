@@ -12,33 +12,51 @@
         .catch(error => console.log('Service Worker error:', error));
     }
   </script>
-</head>
-<body>
-    <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Calculadora de Protecciones para Motor Trifásico</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #1e1e1e;
-      color: #f1f1f1;
       margin: 0;
       padding: 0;
+      transition: background-color 0.3s, color 0.3s;
     }
+
+    /* 🌞 Modo Claro */
+    body.light {
+      background-color: #ffffff;
+      color: #000000;
+    }
+    body.light .resultado {
+      background-color: #f5f5f5;
+      border: 1px solid #0077cc;
+    }
+    body.light .etiqueta-itm {
+      color: #0055aa;
+    }
+
+    /* 🌙 Modo Oscuro */
+    body.dark {
+      background-color: #1e1e1e;
+      color: #f1f1f1;
+    }
+    body.dark .resultado {
+      background-color: #333;
+      border: 1px solid #66cccc;
+    }
+    body.dark .etiqueta-itm {
+      color: #99ccff;
+    }
+
     .contenedor {
       max-width: 450px;
       margin: 0 auto;
       padding: 30px 20px;
     }
     h2 {
-      color: #66b3ff;
       font-size: 1.4em;
       display: flex;
       align-items: center;
       gap: 10px;
+      color: #66b3ff;
     }
     h2 img {
       width: 40px;
@@ -54,7 +72,7 @@
     }
     .info-unidad {
       font-size: 0.85em;
-      color: #ccc;
+      color: gray;
       margin-top: 4px;
     }
     .botones {
@@ -63,8 +81,6 @@
     .resultado {
       margin-top: 30px;
       padding: 15px;
-      background-color: #333;
-      border: 1px solid #66cccc;
       border-radius: 5px;
     }
     .proteccion {
@@ -78,18 +94,29 @@
     }
     .opcional {
       font-size: 0.8em;
-      color: #aaa;
       font-style: italic;
     }
-    .etiqueta-itm, .norma {
+    .etiqueta-itm {
       font-size: 0.8em;
-      color: #99ccff;
       margin-top: 5px;
+    }
+
+    /* Botón de modo */
+    .modo-btn {
+      margin: 15px 0;
+      padding: 8px 15px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
     }
   </style>
 </head>
-<body>
+<body class="dark"><!-- Inicia en modo oscuro -->
+
   <div class="contenedor">
+    <button class="modo-btn" onclick="toggleModo()">🌞/🌙 Cambiar modo</button>
+
     <h2>
       <img src="imagenes/logo.png" alt="Logo">
       <span>
@@ -138,6 +165,11 @@
 
   <script>
     const HP_TO_KW = 0.746;
+
+    function toggleModo() {
+      document.body.classList.toggle("dark");
+      document.body.classList.toggle("light");
+    }
 
     function hpToKw() {
       const hp = parseFloat(document.getElementById("potenciaHp").value);
