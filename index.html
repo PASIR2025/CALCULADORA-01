@@ -77,6 +77,13 @@
     }
     .botones {
       margin-top: 20px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .botones button {
+      flex: 1;
+      min-width: 150px;
     }
     .resultado {
       margin-top: 30px;
@@ -100,8 +107,6 @@
       font-size: 0.8em;
       margin-top: 5px;
     }
-
-    /* Botón de modo */
     .modo-btn {
       margin: 15px 0;
       padding: 8px 15px;
@@ -109,6 +114,16 @@
       border: none;
       cursor: pointer;
       font-weight: bold;
+    }
+    .mensaje-error {
+      color: #f97373;
+      font-size: 0.85em;
+      margin-top: 8px;
+    }
+    .nota-supuestos {
+      font-size: 0.75em;
+      margin-top: 10px;
+      opacity: 0.8;
     }
   </style>
 </head>
@@ -185,6 +200,17 @@
       }
     }
 
+    // Sugerencia de ITM comercial
+    function seleccionarITMcomercial(corriente) {
+      const valores = [6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200];
+      for (let i = 0; i < valores.length; i++) {
+        if (corriente <= valores[i]) {
+          return valores[i];
+        }
+      }
+      return valores[valores.length - 1];
+    }
+
     function calcular() {
       const potenciaKw = parseFloat(document.getElementById("potenciaKw").value);
       const voltaje = parseFloat(document.getElementById("voltaje").value);
@@ -192,8 +218,28 @@
       const fp = parseFloat(document.getElementById("fp").value);
       const arranque = document.getElementById("arranque").value;
 
-      if (isNaN(potenciaKw) || isNaN(voltaje) || isNaN(eficiencia) || isNaN(fp)) {
-        alert("Por favor, ingresa todos los valores correctamente.");
+      const resultadoDiv = document.getElementById("resultado");
+      let errores = [];
+
+      if (isNaN(potenciaKw) || potenciaKw <= 0) {
+        errores.push("Ingresa una potencia válida en kW (mayor que 0).");
+      }
+      if (isNaN(voltaje) || voltaje <= 0) {
+        errores.push("Selecciona una tensión trifásica válida.");
+      }
+      if (isNaN(eficiencia) || eficiencia <= 0 || eficiencia > 1) {
+        errores.push("La eficiencia (η) debe estar entre 0 y 1 (ej. 0.90).");
+      }
+      if (isNaN(fp) || fp <= 0 || fp > 1) {
+        errores.push("El factor de potencia (cos φ) debe estar entre 0 y 1 (ej. 0.85).");
+      }
+
+      if (errores.length > 0) {
+        resultadoDiv.style.display = "block";
+        resultadoDiv.innerHTML = `
+          <strong>⚠ Corrige los siguientes puntos:</strong>
+          <ul>${errores.map(e => `<li>${e}</li>`).join("")}</ul>
+        `;
         return;
       }
 
@@ -209,44 +255,65 @@
       const releMax = (intensidadOperacion * 1.15).toFixed(1);
       const itmMin = Math.ceil(In * 1.25);
       const itmMax = Math.ceil(In * 1.5);
+      const itmComercial = seleccionarITMcomercial(itmMax);
       const corrienteEstrella = (In * 0.33).toFixed(1);
+
+      let curvaTexto = "Curva C recomendada para motores.";
+      if (arranque === "vfd" || arranque === "estrella") {
+        curvaTexto = "Curva C o D recomendada según tipo de arranque y condiciones de servicio.";
+      }
 
       let resultadoHTML = `
         <strong>⚙ Resultados para motor de ${potenciaKw.toFixed(2)} kW (${(potenciaKw / HP_TO_KW).toFixed(2)} HP) a ${voltaje} V</strong><br>
-        <strong>Corriente estimada:</strong> ${In.toFixed(2)} A
+        <strong>Corriente estimada (In):</strong> ${In.toFixed(2)} A
+        <div class="nota-supuestos">
+          Supuestos: sistema trifásico, cálculo según P = √3·V·I·cos φ·η. Valores orientativos para fines didácticos.
+        </div>
+        <hr>
       `;
 
       if (arranque === "vfd") {
         resultadoHTML += `
           <div class="proteccion">
             <img src="imagenes/itm.png" alt="ITM">
-            <div><strong>ITM:</strong> ${itmMin} A - ${itmMax} A
-              <div class="etiqueta-itm">📘 Calculado al 125%-150% de In según IEC 60947-2 y CNE Perú Sección 4.3.2</div>
+            <div>
+              <strong>ITM:</strong> ${itmMin} A - ${itmMax} A<br>
+              <strong>ITM comercial sugerido:</strong> ${itmComercial} A<br>
+              <div class="etiqueta-itm">
+                📘 Calculado al 125%-150% de In según IEC 60947-2 y CNE Perú Sección 4.3.2<br>
+                ${curvaTexto}
+              </div>
             </div>
           </div>
           <div class="proteccion">
             <img src="imagenes/diferencial.png" alt="Interruptor diferencial">
-            <div><strong>Interruptor diferencial:</strong> Igual o superior a ${itmMin} A</div>
+            <div><strong>Interruptor diferencial:</strong> Igual o superior a ${itmComercial} A</div>
           </div>
           <div class="proteccion">
             <img src="imagenes/contactor.png" alt="Contactor">
-            <div><strong>Contactor:</strong> ${contactorMin} A - ${contactorMax} A <span class="opcional">(opcional)</span></div>
+            <div><strong>Contactor:</strong> ${contactorMin} A - ${contactorMax} A <span class="opcional">(opcional según esquema con VFD)</span></div>
           </div>
         `;
       } else if (arranque === "estrella") {
         resultadoHTML += `
           <div class="proteccion">
             <img src="imagenes/itm.png" alt="ITM" />
-            <div><strong>ITM:</strong> ${itmMin} A - ${itmMax} A
-              <div class="etiqueta-itm">📘 Calculado al 125%-150% de In según IEC 60947-2 y CNE Perú Sección 4.3.2</div>
+            <div>
+              <strong>ITM:</strong> ${itmMin} A - ${itmMax} A<br>
+              <strong>ITM comercial sugerido:</strong> ${itmComercial} A
+              <div class="etiqueta-itm">
+                📘 Calculado al 125%-150% de In según IEC 60947-2 y CNE Perú Sección 4.3.2<br>
+                ${curvaTexto}
+              </div>
             </div>
           </div>
           <div class="proteccion">
             <img src="imagenes/contactor.png" alt="Contactor" />
-            <div><strong>Contactor:</strong><br>
+            <div>
+              <strong>Contactores:</strong><br>
               Principal y Triángulo (Δ): ${contactorMin} A - ${contactorMax} A<br>
               Estrella (Y): ${(In * 0.33 * 1.15).toFixed(1)} A - ${(In * 0.33 * 1.25).toFixed(1)} A<br>
-              <span class="etiqueta-itm">📘 Estrella usa ≈33% de la corriente nominal</span>
+              <span class="etiqueta-itm">📘 En estrella la corriente ≈ 33% de la corriente nominal.</span>
             </div>
           </div>
           <div class="proteccion">
@@ -258,8 +325,13 @@
         resultadoHTML += `
           <div class="proteccion">
             <img src="imagenes/itm.png" alt="ITM" />
-            <div><strong>ITM:</strong> ${itmMin} A - ${itmMax} A
-              <div class="etiqueta-itm">📘 Calculado al 125%-150% de In según IEC 60947-2 y CNE Perú Sección 4.3.2</div>
+            <div>
+              <strong>ITM:</strong> ${itmMin} A - ${itmMax} A<br>
+              <strong>ITM comercial sugerido:</strong> ${itmComercial} A
+              <div class="etiqueta-itm">
+                📘 Calculado al 125%-150% de In según IEC 60947-2 y CNE Perú Sección 4.3.2<br>
+                ${curvaTexto}
+              </div>
             </div>
           </div>
           <div class="proteccion">
@@ -280,8 +352,8 @@
         </div>
       `;
 
-      document.getElementById("resultado").innerHTML = resultadoHTML;
-      document.getElementById("resultado").style.display = "block";
+      resultadoDiv.innerHTML = resultadoHTML;
+      resultadoDiv.style.display = "block";
     }
   </script>
 </body>
