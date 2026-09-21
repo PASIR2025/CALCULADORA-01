@@ -1,0 +1,2938 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora Industrial – Motor y Conductores</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker registrado ✅'))
+        .catch(error => console.log('Service Worker error:', error));
+    }
+
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const installBtn = document.getElementById('installBtn');
+      if (isMobile && installBtn && !window.matchMedia('(display-mode: standalone)').matches) {
+        installBtn.style.display = 'inline-flex';
+      }
+    });
+
+    async function instalarApp() {
+      if (!deferredPrompt) {
+        alert("Si tu navegador lo permite, también puedes instalar desde el menú 'Añadir a pantalla de inicio'.");
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('Resultado de instalación:', outcome);
+      deferredPrompt = null;
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.style.display = 'none';
+    }
+  </script>
+  <style>
+    :root {
+      --bg-main: #071019;
+      --bg-panel: rgba(8, 16, 27, 0.97);
+      --bg-panel-soft: rgba(15, 27, 44, 0.88);
+      --bg-card: rgba(12, 22, 37, 0.94);
+      --bg-input: #0b1726;
+      --text-main: #e7eef8;
+      --text-soft: #9bb0c6;
+      --line: rgba(90, 123, 156, 0.28);
+      --line-strong: rgba(93, 177, 255, 0.38);
+      --accent: #00b8d9;
+      --accent-2: #0091b3;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --industrial: #ff8a00;
+      --shadow: 0 24px 48px rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      color: var(--text-main);
+      background:
+        linear-gradient(180deg, rgba(5, 10, 18, 0.98), rgba(7, 11, 19, 0.98)),
+        linear-gradient(rgba(71, 85, 105, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(71, 85, 105, 0.12) 1px, transparent 1px);
+      background-size: auto, 24px 24px, 24px 24px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    body.light {
+      --bg-main: #edf2f7;
+      --bg-panel: rgba(255, 255, 255, 0.96);
+      --bg-panel-soft: rgba(241, 245, 249, 0.96);
+      --bg-card: #f8fafc;
+      --bg-input: #ffffff;
+      --text-main: #0f172a;
+      --text-soft: #5b6b80;
+      --line: rgba(100, 116, 139, 0.18);
+      --line-strong: rgba(100, 116, 139, 0.34);
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --shadow: 0 14px 32px rgba(15, 23, 42, 0.10);
+      background:
+        linear-gradient(180deg, rgba(240, 244, 248, 0.98), rgba(228, 234, 241, 0.98)),
+        linear-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+      background-size: auto, 24px 24px, 24px 24px;
+    }
+
+    .contenedor {
+      max-width: 560px;
+      margin: 16px auto 24px auto;
+      padding: 14px;
+    }
+
+    .app-shell {
+      border: 1px solid var(--line-strong);
+      background: linear-gradient(180deg, rgba(8,16,27,0.98), rgba(7,14,24,0.98));
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+    }
+
+    body.light .app-shell {
+      background: linear-gradient(180deg, rgba(255,255,255,0.97), rgba(243,247,252,0.97));
+    }
+
+    .app-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+      background-size: 18px 18px;
+      opacity: 0.7;
+    }
+
+    .app-shell > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .social-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .top-social-links {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px;
+      border: 1px solid var(--line);
+      background: var(--bg-panel-soft);
+    }
+
+    .top-social-links.visible {
+      display: flex;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .top-icon-btn {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .top-icon-img {
+      width: 28px;
+      height: 28px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      background: #fff;
+      transition: transform 120ms ease-out, box-shadow 120ms ease-out, filter 120ms ease-out;
+    }
+
+    .icon-youtube-img {
+      width: 38px;
+      height: 24px;
+    }
+
+    .top-icon-btn:hover .top-icon-img {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+      filter: brightness(1.05);
+    }
+
+    h2 {
+      font-size: 1.15em;
+      line-height: 1.25;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-main);
+      margin: 8px 0 14px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 14px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(0,184,217,0.12), rgba(255,138,0,0.08));
+      border: 1px solid rgba(0,184,217,0.18);
+    }
+
+    h2 img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      background: #0b1120;
+    }
+
+    .subtitulo {
+      display: inline-block;
+      margin-top: 2px;
+      font-size: 0.72em;
+      color: var(--text-soft);
+      text-transform: none;
+      letter-spacing: 0.02em;
+    }
+
+    .resumen-app {
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(15,27,44,0.84), rgba(10,21,35,0.92));
+      font-size: 0.83em;
+      color: var(--text-soft);
+      line-height: 1.48;
+    }
+
+    body.light .resumen-app {
+      background: linear-gradient(135deg, rgba(239,246,255,0.92), rgba(255,247,237,0.82));
+    }
+
+    label, input, select {
+      display: block;
+      width: 100%;
+    }
+
+    .grupo-campo {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(14,24,38,0.96), rgba(11,20,33,0.94));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    body.light .grupo-campo {
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+    }
+
+    .grupo-campo label {
+      font-size: 0.87em;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    input, select, button {
+      font-size: 0.95em;
+      font-family: inherit;
+    }
+
+    .info-unidad {
+      font-size: 0.76em;
+      color: var(--text-soft);
+      margin-top: 5px;
+      line-height: 1.35;
+    }
+
+    input, select {
+      padding: 10px 10px;
+      border: 1px solid var(--line-strong);
+      background: var(--bg-input);
+      color: var(--text-main);
+      min-height: 42px;
+    }
+
+    input::placeholder { color: #7d8ca0; }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .input-error {
+      border-color: var(--danger) !important;
+      box-shadow: 0 0 0 1px var(--danger) !important;
+    }
+
+    .error-msg {
+      display: none;
+      font-size: 0.76em;
+      margin-top: 6px;
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.22);
+      border-left: 3px solid var(--danger);
+      padding: 6px 8px;
+      line-height: 1.35;
+    }
+
+    body.light .error-msg {
+      color: #991b1b;
+      background: rgba(254, 226, 226, 0.95);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin: 10px 0 12px 0;
+      flex-wrap: wrap;
+      padding: 4px;
+      border: 1px solid var(--line);
+      background: var(--bg-panel-soft);
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-soft);
+      cursor: pointer;
+      font-size: 0.88em;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transition: background 140ms ease-out, color 140ms ease-out, transform 120ms ease-out;
+    }
+
+    .tab-btn.activo {
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      color: #f9fafb;
+      border-color: rgba(255,255,255,0.10);
+    }
+
+    .botones {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .botones button,
+    .modo-btn {
+      min-height: 40px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 120ms ease-out, box-shadow 120ms ease-out, background 120ms ease-out;
+    }
+
+    .botones button {
+      flex: 1;
+      min-width: 135px;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      color: #f9fafb;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+    }
+
+    .botones button.secundario,
+    .modo-btn {
+      background: var(--bg-panel-soft);
+      color: var(--text-main);
+      box-shadow: none;
+    }
+
+    .botones button:hover,
+    .modo-btn:hover,
+    .tab-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    #installBtn {
+      display: none;
+    }
+
+    .resultado {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(11,18,32,0.98), rgba(9,15,27,0.96));
+      box-shadow: 0 16px 34px rgba(2, 8, 23, 0.34);
+      display: none;
+      font-size: 0.92em;
+      line-height: 1.5;
+    }
+
+    body.light .resultado {
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      box-shadow: 0 18px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .resultado-cabecera {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(47,125,246,0.18), rgba(34,197,94,0.08));
+    }
+
+    .resultado-titulo {
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .resultado-fecha {
+      font-size: 0.76em;
+      color: var(--text-soft);
+    }
+
+    .resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .dato-box {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(19,29,49,0.82), rgba(13,21,36,0.92));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    body.light .dato-box {
+      background: linear-gradient(180deg, #ffffff, #f7fbff);
+    }
+
+    .dato-box small {
+      display: block;
+      color: var(--text-soft);
+      font-size: 0.72em;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .dato-box strong {
+      font-size: 1em;
+    }
+
+    .etiqueta-itm {
+      font-size: 0.76em;
+      margin-top: 5px;
+      color: var(--text-soft);
+      line-height: 1.4;
+    }
+
+    .recomendacion-comercial {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(47, 125, 246, 0.35);
+      background: linear-gradient(135deg, rgba(47,125,246,0.18), rgba(30,64,175,0.08));
+    }
+
+    body.light .recomendacion-comercial {
+      background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(191,219,254,0.35));
+    }
+
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.38);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #dbeafe;
+      font-size: 0.68em;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    body.light .mini-badge {
+      background: rgba(255,255,255,0.9);
+      color: #1d4ed8;
+    }
+
+    .valor-comercial {
+      display: block;
+      font-size: 1.02em;
+      font-weight: 800;
+      margin-bottom: 3px;
+      color: var(--text-main);
+    }
+
+    .sub-comercial {
+      font-size: 0.78em;
+      color: var(--text-soft);
+      line-height: 1.4;
+    }
+
+    .proteccion {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(18,28,47,0.88), rgba(11,18,30,0.95));
+      box-shadow: 0 10px 22px rgba(2, 8, 23, 0.20);
+    }
+
+    body.light .proteccion {
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .proteccion img {
+      width: 48px;
+      flex: 0 0 48px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
+    }
+
+    .opcional {
+      font-size: 0.8em;
+      font-style: italic;
+      color: var(--text-soft);
+    }
+
+    .aviso-tecnico {
+      margin-top: 12px;
+      padding: 11px 12px;
+      border-left: 4px solid var(--warning);
+      border-radius: 0 14px 14px 0;
+      background: rgba(245, 158, 11, 0.10);
+      font-size: 0.8em;
+      line-height: 1.5;
+    }
+
+    body.light .aviso-tecnico {
+      background: rgba(251, 191, 36, 0.10);
+    }
+
+    .estado-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      font-size: 0.75em;
+      border: 1px solid var(--line);
+      background: var(--bg-panel-soft);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .estado-pill.warn {
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+    }
+
+    body.light .estado-pill.warn { color: #b45309; }
+
+    .estado-pill.ok {
+      border-color: rgba(34, 197, 94, 0.5);
+      color: #86efac;
+    }
+
+    body.light .estado-pill.ok { color: #166534; }
+
+    .info-btn {
+      font-size: 0.82em;
+      background: var(--bg-panel-soft);
+      color: var(--text-main);
+    }
+
+    .info-btn.activo-info {
+      background: var(--success);
+      border-color: #15803d;
+      color: white;
+    }
+
+    .info-calculo {
+      margin-top: 12px;
+      font-size: 0.87em;
+      line-height: 1.55;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .info-calculo ul {
+      margin-top: 6px;
+      padding-left: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.86em;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 5px;
+      text-align: center;
+    }
+
+    th {
+      font-weight: 700;
+      background: var(--bg-panel-soft);
+    }
+
+    .recomendado {
+      background-color: rgba(34, 197, 94, 0.12);
+      font-weight: 700;
+      border-left: 4px solid var(--success);
+    }
+
+
+
+    .historial-panel {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg-card);
+      display: none;
+    }
+
+    .historial-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .historial-head strong {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.9em;
+    }
+
+    .historial-lista {
+      display: grid;
+      gap: 8px;
+    }
+
+    .hist-item {
+      border: 1px solid var(--line);
+      background: var(--bg-panel-soft);
+      padding: 10px;
+    }
+
+    .hist-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    .hist-item small {
+      color: var(--text-soft);
+      display: block;
+      line-height: 1.35;
+    }
+
+    .hist-item-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .hist-empty {
+      font-size: 0.86em;
+      color: var(--text-soft);
+      border: 1px dashed var(--line);
+      padding: 10px;
+    }
+
+
+    .panel-utilidades {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg-card);
+      display: none;
+    }
+
+    .panel-utilidades p {
+      margin: 0 0 10px 0;
+      color: var(--text-soft);
+      font-size: 0.84em;
+      line-height: 1.45;
+    }
+
+    .switch-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      background: var(--bg-panel-soft);
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 0.86em;
+      cursor: pointer;
+    }
+
+    .switch-line input {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      accent-color: var(--accent);
+      margin: 0;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .calc-mini-note {
+      font-size: 0.78em;
+      color: var(--text-soft);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    .print-only-report {
+      display: none;
+    }
+
+    .print-report-box {
+      border-bottom: 2px solid #0f172a;
+      padding: 0 0 10px 0;
+      margin-bottom: 14px;
+    }
+
+    .print-report-box h1 {
+      font-size: 15pt;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .print-report-box p {
+      margin: 2px 0;
+      font-size: 9pt;
+      color: #334155;
+    }
+
+    .footer-app {
+      margin-top: 14px;
+      text-align: right;
+      font-size: 0.82em;
+    }
+
+    .footer-app a {
+      text-decoration: none;
+      color: var(--accent);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 0;
+    }
+
+    .footer-app a::after {
+      content: "→";
+      font-size: 0.9em;
+      margin-top: 1px;
+    }
+
+    .oculto-impresion {}
+
+    @media (max-width: 560px) {
+      .contenedor {
+        margin: 8px auto 18px auto;
+        padding: 8px;
+      }
+
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .resumen-grid,
+      .panel-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .botones button,
+      .modo-btn {
+        min-width: 100%;
+      }
+
+      h2 {
+        font-size: 1.02em;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      body, body.light, body.dark {
+        background: white !important;
+        color: black !important;
+      }
+
+      .contenedor {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .app-shell {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: white !important;
+        padding: 0 0 10px 0;
+      }
+
+      h2,
+      .resumen-app,
+      .grupo-campo,
+      .historial-panel,
+      .panel-utilidades,
+      .oculto-impresion,
+      .top-bar,
+      .tabs,
+      .footer-app,
+      .botones,
+      .info-btn,
+      .info-calculo {
+        display: none !important;
+      }
+
+      .print-only-report {
+        display: block !important;
+      }
+
+      .resultado,
+      .proteccion,
+      .dato-box,
+      .grupo-campo,
+      .switch-line,
+      .hist-item {
+        background: white !important;
+        color: black !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+      }
+
+      table, th, td {
+        border-color: #94a3b8 !important;
+      }
+
+      .estado-pill {
+        color: black !important;
+        border-color: #64748b !important;
+      }
+
+      #seccionProtecciones, #seccionConductores, #seccionCaida, #seccionFactor {
+        display: none !important;
+      }
+
+      body.print-protecciones #seccionProtecciones,
+      body.print-conductores #seccionConductores,
+      body.print-caida #seccionCaida,
+      body.print-factor #seccionFactor {
+        display: block !important;
+      }
+
+      body.print-protecciones #resultadoProtecciones,
+      body.print-conductores #resultadoConductor,
+      body.print-caida #resultadoCaida,
+      body.print-factor #resultadoFactor {
+        display: block !important;
+      }
+    }
+  
+    /* UX Motor v7 */
+    .modo-calculo{display:flex;gap:10px;margin:12px 0 18px;flex-wrap:wrap}
+    .modo-calculo button{flex:1;min-width:140px;padding:13px 14px;border-radius:14px;border:1px solid rgba(0,184,217,0.24);background:linear-gradient(135deg, rgba(17,30,46,0.98), rgba(10,20,33,0.96));color:#dceaf7;font-weight:800;cursor:pointer;letter-spacing:.02em;box-shadow:0 10px 22px rgba(2,8,23,.18)}
+    .modo-calculo button.activo{background:linear-gradient(135deg, rgba(0,184,217,0.95), rgba(0,145,179,0.95));color:#04121b;border-color:transparent;box-shadow:0 10px 24px rgba(0,184,217,.28)}
+    body.light .modo-calculo button{background:linear-gradient(135deg, #ffffff, #eff6ff);color:#12324a}
+    .motor-card{border:1px solid rgba(0,184,217,0.18);border-radius:20px;margin:12px 0;background:linear-gradient(180deg, rgba(13,23,38,0.98), rgba(10,18,30,0.96));overflow:hidden;box-shadow:0 10px 24px rgba(2,8,23,.18)}
+    body.light .motor-card{background:linear-gradient(180deg, #ffffff, #f8fbff)}
+    .motor-card summary{cursor:pointer;padding:16px 18px;font-weight:800;list-style:none;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg, rgba(0,184,217,0.10), rgba(255,138,0,0.10));border-bottom:1px solid rgba(0,184,217,0.12);text-transform:uppercase;letter-spacing:.03em}
+    .motor-card summary::-webkit-details-marker{display:none}
+    .motor-card summary:after{content:'⌄';font-size:18px;color:var(--accent);font-weight:900;opacity:.95;transition:transform .2s ease}
+    .motor-card:not([open]) summary:after{transform:rotate(-90deg)}
+    .motor-card-body{padding:14px 16px 6px}
+    .campo-ayuda{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg, rgba(0,184,217,0.92), rgba(0,145,179,0.92));color:#04121b;font-size:12px;font-weight:900;cursor:help;margin-left:5px;position:relative}
+    .campo-ayuda:hover:after{content:attr(data-tip);position:absolute;z-index:20;left:22px;top:-8px;width:260px;background:#0c1b2d;color:#fff;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:500;line-height:1.4;box-shadow:0 10px 24px rgba(0,0,0,.22);border:1px solid rgba(0,184,217,.18)}
+    .solo-profesional{display:none}
+    .modo-profesional .solo-profesional{display:block}
+    .estimacion-badge{display:inline-block;padding:4px 9px;border-radius:999px;background:rgba(255,138,0,0.16);border:1px solid rgba(255,138,0,0.26);color:#ffcf8b;font-size:11px;font-weight:800;margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
+    body.light .estimacion-badge{color:#9a4c00}
+    .resultado-resumen{border:1px solid var(--line);border-radius:22px;padding:16px;margin:14px 0;background:linear-gradient(180deg, rgba(10,20,33,0.96), rgba(14,24,39,0.94));box-shadow:inset 0 1px 0 rgba(255,255,255,0.03)}
+    body.light .resultado-resumen{background:linear-gradient(180deg, rgba(248,250,252,0.95), rgba(238,245,255,0.92));box-shadow:inset 0 1px 0 rgba(255,255,255,0.6)}
+    .resultado-resumen h3{margin:0 0 10px;font-size:18px}
+    .resultado-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+    .resultado-chip{padding:11px 12px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(148,163,184,0.14);box-shadow:none}
+    body.light .resultado-chip{background:rgba(255,255,255,0.9);border:1px solid #dbe4ee;box-shadow:0 6px 14px rgba(15,23,42,0.04)}
+    .resultado-chip small{display:block;color:#8aa0b8;margin-bottom:3px}.resultado-chip strong{font-size:14px}
+    body.light .resultado-chip small{color:#667085}
+    @media(max-width:640px){.campo-ayuda:hover:after{left:auto;right:-5px;top:24px;width:230px}.modo-calculo button{min-width:120px}}
+
+
+    .pf-hero{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:12px 0 16px;padding:18px;border:1px solid rgba(0,184,217,.22);border-radius:22px;background:linear-gradient(135deg,rgba(0,184,217,.12),rgba(255,138,0,.09));box-shadow:0 12px 28px rgba(2,8,23,.18)}
+    .pf-hero h3{margin:3px 0 7px;font-size:1.22rem}.pf-hero p{margin:0;color:var(--text-soft);font-size:.86em;line-height:1.45}.pf-kicker{font-size:.68em;font-weight:900;letter-spacing:.16em;color:var(--accent)}
+    .pf-symbol{min-width:86px;height:86px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--industrial));color:#06121b;box-shadow:0 12px 28px rgba(0,184,217,.22)}
+    .pf-status{padding:12px 14px;border-radius:16px;margin:12px 0;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+    .pf-status.ok{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.08)}.pf-status.warn{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+    @media(max-width:560px){.pf-hero{align-items:flex-start}.pf-symbol{min-width:68px;height:68px;font-size:1.05rem}}
+
+</style>
+</head>
+<body class="dark">
+  <div class="contenedor">
+    <div class="app-shell">
+      <div id="printHeader" class="print-only-report"></div>
+      <div id="printFooter" class="print-only-report"></div>
+      <div class="top-bar oculto-impresion">
+        <div class="social-panel">
+          <button class="modo-btn" type="button" onclick="toggleSocialLinks()">🌐 Enlaces y redes</button>
+          <div class="top-social-links" id="topSocialLinks">
+            <button class="top-icon-btn" onclick="window.open('https://www.tiktok.com/@mecatronica.industrial?_r=1&_t=ZS-91QgIcgp3g1', '_blank')">
+              <img src="imagenes/tiktok.png" alt="TikTok" class="top-icon-img">
+            </button>
+            <button class="top-icon-btn" onclick="window.open('https://www.facebook.com/share/17jbzqJP4N/', '_blank')">
+              <img src="imagenes/facebook.png" alt="Facebook" class="top-icon-img">
+            </button>
+            <button class="top-icon-btn" onclick="window.open('https://www.youtube.com/@pasir_indrustrial', '_blank')">
+              <img src="imagenes/youtube.png" alt="YouTube" class="top-icon-img icon-youtube-img">
+            </button>
+            <button class="top-icon-btn" onclick="window.open('https://pasir.anibalcopitan.com/#', '_blank')">
+              <img src="imagenes/manuales.png" alt="Manuales y cursos" class="top-icon-img">
+            </button>
+            <button class="top-icon-btn" onclick="window.open('https://wa.link/ykpmx5', '_blank')">
+              <img src="imagenes/whatsapp.png" alt="WhatsApp" class="top-icon-img">
+            </button>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <button class="modo-btn" type="button" onclick="toggleModo()">🌞/🌙 Modo</button>
+          <button class="modo-btn" type="button" onclick="togglePanelDatos()">🔐 Datos</button>
+          <button class="modo-btn" id="installBtn" type="button" onclick="instalarApp()">📲 Instalar app</button>
+        </div>
+      </div>
+
+      <h2>
+        <img src="imagenes/logo.png" alt="Logo">
+        <span>
+          CALCULADORA INDUSTRIAL
+          <span class="subtitulo">Protecciones de motor · conductor · caída de tensión · PWA técnica</span>
+        </span>
+      </h2>
+
+      <div class="resumen-app oculto-impresion">
+        Herramienta de cálculo preliminar para trabajo técnico. Esta fase 3 agrega módulo independiente de caída de tensión, reporte de impresión más profesional y control local de respaldo / privacidad de datos.
+      </div>
+
+      <div class="tabs oculto-impresion">
+        <button id="btnProtecciones" class="tab-btn activo" onclick="mostrarSeccion('protecciones')">⚙ Motor</button>
+        <button id="btnConductores" class="tab-btn" onclick="mostrarSeccion('conductores')">🔌 Conductor</button>
+        <button id="btnCaida" class="tab-btn" onclick="mostrarSeccion('caida')">📉 Caída de tensión</button>
+        <button id="btnFactor" class="tab-btn" onclick="mostrarSeccion('factor')">⚡ Factor de potencia</button>
+      </div>
+
+      <div id="seccionProtecciones">
+        <div id="motorUxRoot">
+          <div class="modo-calculo oculto-impresion">
+            <button id="modoRapidoBtn" class="activo" type="button" onclick="setModoMotor('rapido')">⚡ Cálculo rápido</button>
+            <button id="modoProBtn" type="button" onclick="setModoMotor('profesional')">🧰 Modo profesional</button>
+          </div>
+          <div class="info-unidad oculto-impresion" id="textoModoMotor">Ingresa los datos esenciales. Los parámetros avanzados usarán valores orientativos y se marcarán como estimados.</div>
+
+          <details class="motor-card" open>
+            <summary>1. Ver datos básicos del motor</summary>
+            <div class="motor-card-body">
+              <div class="grupo-campo"><label for="potenciaHp">Potencia del motor (HP)</label><input type="number" id="potenciaHp" step="0.01" placeholder="Ej: 7.5" oninput="hpToKw()"><div class="info-unidad">Conversión automática a kW.</div><div class="error-msg" id="error-potenciaHp"></div></div>
+              <div class="grupo-campo"><label for="potenciaKw">Potencia del motor (kW)</label><input type="number" id="potenciaKw" step="0.01" placeholder="Ej: 5.6" oninput="kwToHp()"><div class="info-unidad">Conversión automática a HP.</div><div class="error-msg" id="error-potenciaKw"></div></div>
+              <div class="grupo-campo"><label for="sistemaMotor">Sistema</label><select id="sistemaMotor" onchange="syncVoltageOptions()"><option value="3f" selected>Trifásico</option><option value="1f">Monofásico</option></select></div>
+              <div class="grupo-campo"><label for="voltaje">Tensión de servicio (V)</label><select id="voltaje"></select></div>
+              <div class="grupo-campo"><label for="normaMotor">Norma / criterio <span class="campo-ayuda" data-tip="IEC queda seleccionada por defecto para cálculo rápido, pero puedes cambiar a NEC. La norma modifica los criterios de selección de protección y sobrecarga.">i</span></label><select id="normaMotor" onchange="actualizarCamposNormaMotor()"><option value="iec" selected>IEC · IEC 60947 / IEC 60364</option><option value="nec">NEC · Artículo 430</option></select><div class="info-unidad">IEC es el valor predeterminado; no se asume de forma oculta.</div></div>
+              <div class="grupo-campo"><label for="tipoCargaMotor">Tipo de carga <span class="campo-ayuda" data-tip="La app usa este dato para sugerir Ia/In, tiempo de aceleración y frecuencia de arranques. En Modo profesional podrás ajustar los valores.">i</span></label><select id="tipoCargaMotor" onchange="actualizarSugerenciasMotor()"><option value="bomba" selected>Bomba centrífuga</option><option value="ventilador">Ventilador</option><option value="compresor">Compresor</option><option value="transportador">Transportador</option><option value="triturador">Trituradora / molino</option><option value="elevador">Elevador</option><option value="otra">Otra / no especificada</option></select><div class="info-unidad" id="sugerenciaCargaMotor">Se aplicarán valores orientativos de arranque que puedes revisar en Modo profesional.</div></div>
+              <div class="grupo-campo"><label for="eficiencia">Eficiencia estimada (η) <span class="campo-ayuda" data-tip="Si no tienes el dato de placa, usa una estimación razonable. La corriente calculada depende directamente de este valor.">i</span></label><input type="number" id="eficiencia" value="0.90" min="0.5" max="1" step="0.01"><div class="error-msg" id="error-eficiencia"></div></div>
+              <div class="grupo-campo"><label for="fp">Factor de potencia (cos φ) <span class="campo-ayuda" data-tip="Relación entre potencia activa y aparente. Si no lo conoces, usa el valor de placa o una estimación conservadora.">i</span></label><input type="number" id="fp" value="0.85" min="0.1" max="1" step="0.01"><div class="error-msg" id="error-fp"></div></div>
+              <div class="grupo-campo"><label for="arranque">Tipo de arranque</label><select id="arranque" onchange="actualizarSugerenciasMotor()"><option value="1">Directo</option><option value="estrella">Estrella-triángulo</option><option value="0.7">Arrancador suave</option><option value="vfd">Variador de frecuencia (VFD)</option></select></div>
+            </div>
+          </details>
+
+          <details class="motor-card solo-profesional">
+            <summary>2. Ver datos de placa y mecánicos</summary>
+            <div class="motor-card-body">
+              <div class="grupo-campo"><label for="corrientePlaca">Corriente de placa (A) <span class="campo-ayuda" data-tip="Dato recomendado. Si lo ingresas, tendrá prioridad para contactor y protección de sobrecarga.">i</span></label><input type="number" id="corrientePlaca" step="0.1" min="0" placeholder="Ej: 28.4"><div class="error-msg" id="error-corrientePlaca"></div></div>
+              <div class="grupo-campo"><label for="rpmMotor">Velocidad nominal (rpm) <span class="campo-ayuda" data-tip="Velocidad mecánica indicada en placa. Permite estimar deslizamiento si también se conoce frecuencia y número de polos.">i</span></label><input type="number" id="rpmMotor" step="1" min="0" placeholder="Ej: 1750"></div>
+              <div class="grupo-campo"><label for="frecuenciaMotor">Frecuencia (Hz)</label><select id="frecuenciaMotor"><option value="60" selected>60 Hz</option><option value="50">50 Hz</option></select></div>
+              <div class="grupo-campo"><label for="polosMotor">Número de polos</label><select id="polosMotor"><option value="2">2 polos</option><option value="4" selected>4 polos</option><option value="6">6 polos</option><option value="8">8 polos</option><option value="10">10 polos</option><option value="12">12 polos</option></select></div>
+              <div class="grupo-campo"><label for="regimenMotor">Régimen de servicio</label><select id="regimenMotor"><option value="S1" selected>S1 · Servicio continuo</option><option value="S2">S2 · Corta duración</option><option value="S3">S3 · Intermitente periódico</option><option value="S4">S4 · Intermitente con arranque</option></select></div>
+            </div>
+          </details>
+
+          <details class="motor-card solo-profesional">
+            <summary>3. Ver características de arranque</summary>
+            <div class="motor-card-body">
+              <div class="grupo-campo"><label for="relacionArranque">Corriente de arranque Ia/In <span class="campo-ayuda" data-tip="Cuántas veces la corriente nominal demanda el motor durante el arranque. Si no conoces el dato, la app usa un valor orientativo según el tipo de arranque.">i</span></label><input type="number" id="relacionArranque" value="6" step="0.1" min="1" max="20"><div class="estimacion-badge">Editable · puede ser estimado</div><div class="error-msg" id="error-relacionArranque"></div></div>
+              <div class="grupo-campo"><label for="tiempoArranque">Tiempo de aceleración (s) <span class="campo-ayuda" data-tip="Tiempo aproximado desde reposo hasta velocidad de régimen. Influye en la clase del relé y coordinación de protecciones.">i</span></label><input type="number" id="tiempoArranque" value="5" step="0.5" min="0.5" max="120"><div class="error-msg" id="error-tiempoArranque"></div></div>
+              <div class="grupo-campo"><label for="arranquesHora">Arranques por hora</label><input type="number" id="arranquesHora" value="4" step="1" min="0" max="120"></div>
+              <div class="grupo-campo" id="campoPosicionRele" style="display:none;"><label for="posicionRele">Relé térmico en estrella-triángulo</label><select id="posicionRele"><option value="delta" selected>Dentro del delta (≈ 0.58 × In)</option><option value="linea">En línea (≈ 1.00 × In)</option></select></div>
+            </div>
+          </details>
+
+          <details class="motor-card solo-profesional">
+            <summary>4. Ver norma y coordinación avanzada</summary>
+            <div class="motor-card-body">
+              <div class="grupo-campo"><label for="iccDisponible">Icc disponible (kA) <span class="campo-ayuda" data-tip="Corriente de cortocircuito disponible en el punto de instalación. Sirve para comprobar el poder de corte mínimo Icu/Icn.">i</span></label><input type="number" id="iccDisponible" step="0.1" min="0" placeholder="Ej: 10"></div>
+              <div class="grupo-campo"><label for="tensionBobina">Tensión de bobina / mando</label><select id="tensionBobina"><option value="24VDC">24 VDC</option><option value="24VAC">24 VAC</option><option value="110VAC">110 VAC</option><option value="220VAC" selected>220 VAC</option><option value="380VAC">380 VAC</option></select></div>
+              <div class="grupo-campo"><label for="coordinacionIEC">Coordinación IEC</label><select id="coordinacionIEC"><option value="tipo1" selected>Tipo 1</option><option value="tipo2">Tipo 2</option></select></div>
+              <div class="grupo-campo" id="campoFlcNec" style="display:none;"><label for="flcNec">FLC de tabla NEC 430 (A)</label><input type="number" id="flcNec" step="0.1" min="0" placeholder="Ej: 27.0"><div class="error-msg" id="error-flcNec"></div></div>
+              <div id="camposNecMotor" style="display:none;"><div class="grupo-campo"><label for="serviceFactor">Service Factor (SF)</label><input type="number" id="serviceFactor" value="1.00" step="0.01" min="1" max="1.5"></div><div class="grupo-campo"><label for="tempRiseMotor">Elevación de temperatura de placa</label><select id="tempRiseMotor"><option value="unknown" selected>No indicada / desconocida</option><option value="40">40 °C o menor</option><option value="gt40">Mayor de 40 °C</option></select></div></div>
+            </div>
+          </details>
+        </div>
+
+        <div class="botones oculto-impresion"><button type="button" onclick="calcularProtecciones()">Calcular</button><button type="button" class="secundario" onclick="limpiarProtecciones()">Limpiar</button><button type="button" class="secundario" onclick="imprimirSeccion('protecciones')">🖨 Imprimir / Guardar PDF</button></div>
+        <div id="resultadoProtecciones" class="resultado"></div>
+      </div>
+
+      <div id="seccionConductores" style="display:none;">
+        <div class="grupo-campo">
+          <label for="sistemaConductor">Sistema</label>
+          <select id="sistemaConductor" onchange="syncVoltageOptions()">
+            <option value="3f" selected>Trifásico</option>
+            <option value="1f">Monofásico</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="tipoCarga">Tipo de carga</label>
+          <select id="tipoCarga" onchange="actualizarFactorPorCarga()">
+            <option value="motor" selected>Motor trifásico</option>
+            <option value="iluminacion">Iluminación</option>
+            <option value="tomas">Tomas / uso general</option>
+            <option value="otro">Otra carga / personalizado</option>
+          </select>
+          <div class="info-unidad">Define el uso principal del circuito para sugerir el factor de diseño.</div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="corrienteCond">Corriente nominal del circuito In (A)</label>
+          <input type="number" id="corrienteCond" step="0.1" placeholder="Ej: 18.5">
+          <div class="info-unidad">Ingresa la corriente nominal real del circuito o motor.</div>
+          <div class="error-msg" id="error-corrienteCond"></div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="factorDiseno">Factor de diseño (In × …)</label>
+          <select id="factorDiseno">
+            <option value="1.00">1.00 (sin margen adicional)</option>
+            <option value="1.15">1.15 (tomas / uso general)</option>
+            <option value="1.20">1.20 (margen típico de diseño)</option>
+            <option value="1.25" selected>1.25 (motores – criterio tipo NEC 430.22)</option>
+          </select>
+          <div class="info-unidad">El valor puede ajustarse según normativa y criterio del diseñador.</div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="voltajeCond">Tensión de servicio (V)</label>
+          <select id="voltajeCond"></select>
+          <div class="info-unidad">Incluye tensiones industriales frecuentes en monofásico y trifásico.</div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="longitud">Longitud del circuito (ida) en metros</label>
+          <input type="number" id="longitud" step="1" placeholder="Ej: 35">
+          <div class="error-msg" id="error-longitud"></div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="material">Material del conductor</label>
+          <select id="material">
+            <option value="cu" selected>Cobre</option>
+            <option value="al">Aluminio</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="caidaMax">Caída de tensión máxima permitida (%)</label>
+          <input type="number" id="caidaMax" value="3" min="1" max="10" step="0.1">
+          <div class="info-unidad">Referencia típica CNE/IEC: 3% para alimentadores de motor, 5% máximo total.</div>
+          <div class="error-msg" id="error-caidaMax"></div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="aislamiento">Tipo de aislamiento</label>
+          <select id="aislamiento">
+            <option value="pvc" selected>PVC / 70 °C</option>
+            <option value="xlpe">XLPE / 90 °C</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="tempAmbiente">Temperatura ambiente (°C)</label>
+          <select id="tempAmbiente">
+            <option value="25">25 °C</option>
+            <option value="30" selected>30 °C</option>
+            <option value="35">35 °C</option>
+            <option value="40">40 °C</option>
+            <option value="45">45 °C</option>
+            <option value="50">50 °C</option>
+            <option value="55">55 °C</option>
+            <option value="60">60 °C</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="metodoInstalacion">Método de instalación</label>
+          <select id="metodoInstalacion">
+            <option value="tuberia" selected>Tubería / ducto</option>
+            <option value="bandeja">Bandeja perforada</option>
+            <option value="aire">Al aire libre</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="conductoresCargados">Conductores cargados en la misma canalización</label>
+          <select id="conductoresCargados">
+            <option value="2">2 conductores</option>
+            <option value="3" selected>3 conductores</option>
+            <option value="4">4 a 6 conductores</option>
+            <option value="7">7 a 9 conductores</option>
+            <option value="10">10 a 20 conductores</option>
+          </select>
+          <div class="info-unidad">Se usa para aplicar un factor de agrupamiento aproximado.</div>
+        </div>
+
+        <div class="botones oculto-impresion">
+          <button type="button" onclick="calcularConductor()">Calcular conductor</button>
+          <button type="button" class="secundario" onclick="limpiarConductores()">Limpiar</button>
+          <button type="button" class="secundario" onclick="imprimirSeccion('conductores')">🖨 Imprimir / Guardar PDF</button>
+        </div>
+
+        <div id="resultadoConductor" class="resultado"></div>
+      </div>
+
+      <div id="seccionFactor" style="display:none;">
+        <div class="pf-hero">
+          <div>
+            <span class="pf-kicker">POWER QUALITY</span>
+            <h3>Corrección del factor de potencia</h3>
+            <p>Dimensiona un banco de condensadores para motor individual o instalación general y revisa su efecto sobre corriente, reactiva y capacitancia.</p>
+          </div>
+          <div class="pf-symbol">cos φ</div>
+        </div>
+
+        <details class="motor-card" open>
+          <summary>1. Ver datos de la carga</summary>
+          <div class="motor-card-body">
+            <div class="grupo-campo"><label for="modoPF">Aplicación</label><select id="modoPF" onchange="actualizarModoPF()"><option value="motor" selected>Motor individual</option><option value="general">Banco general / instalación</option></select></div>
+            <div class="grupo-campo" id="campoPotMotorPF"><label for="potMotorPF">Potencia mecánica del motor (kW)</label><input type="number" id="potMotorPF" step="0.01" min="0" placeholder="Ej: 30"><div class="info-unidad">Para motor individual se convierte a potencia activa eléctrica usando la eficiencia.</div></div>
+            <div class="grupo-campo" id="campoEficienciaPF"><label for="eficienciaPF">Eficiencia del motor η</label><input type="number" id="eficienciaPF" value="0.92" min="0.5" max="1" step="0.01"></div>
+            <div class="grupo-campo" id="campoPotGeneralPF" style="display:none;"><label for="potActivaPF">Potencia activa de la instalación (kW)</label><input type="number" id="potActivaPF" step="0.01" min="0" placeholder="Ej: 120"></div>
+            <div class="grupo-campo"><label for="sistemaPF">Sistema</label><select id="sistemaPF"><option value="3f" selected>Trifásico</option><option value="1f">Monofásico</option></select></div>
+            <div class="grupo-campo"><label for="voltajePF">Tensión de servicio (V)</label><input type="number" id="voltajePF" value="380" step="1" min="1"></div>
+            <div class="grupo-campo"><label for="frecuenciaPF">Frecuencia</label><select id="frecuenciaPF"><option value="60" selected>60 Hz</option><option value="50">50 Hz</option></select></div>
+          </div>
+        </details>
+
+        <details class="motor-card" open>
+          <summary>2. Ver objetivo de compensación</summary>
+          <div class="motor-card-body">
+            <div class="grupo-campo"><label for="fpActualPF">Factor de potencia actual</label><input type="number" id="fpActualPF" value="0.80" min="0.1" max="0.999" step="0.01"></div>
+            <div class="grupo-campo"><label for="fpObjetivoPF">Factor de potencia objetivo</label><input type="number" id="fpObjetivoPF" value="0.95" min="0.5" max="0.999" step="0.01"></div>
+            <div class="grupo-campo" id="campoI0PF"><label for="corrienteVacioPF">Corriente en vacío I₀ (A) <span class="campo-ayuda" data-tip="Opcional. Permite verificar que la corriente del condensador quede por debajo de aproximadamente 90% de la corriente en vacío del motor.">i</span></label><input type="number" id="corrienteVacioPF" step="0.1" min="0" placeholder="Opcional"></div>
+            <div class="grupo-campo"><label for="armonicosPF">¿Hay VFD, UPS, rectificadores u otras cargas no lineales importantes?</label><select id="armonicosPF"><option value="no" selected>No / no significativo</option><option value="si">Sí / hay armónicos relevantes</option></select></div>
+          </div>
+        </details>
+
+        <details class="motor-card">
+          <summary>3. Ver configuración del banco</summary>
+          <div class="motor-card-body">
+            <div class="grupo-campo"><label for="conexionPF">Conexión del banco trifásico</label><select id="conexionPF"><option value="delta" selected>Delta (Δ)</option><option value="estrella">Estrella (Y)</option></select></div>
+            <div class="grupo-campo"><label for="tipoBancoPF">Tipo de banco</label><select id="tipoBancoPF"><option value="fijo" selected>Fijo / motor individual</option><option value="automatico">Automático por pasos</option></select></div>
+          </div>
+        </details>
+
+        <div class="botones oculto-impresion"><button type="button" onclick="calcularFactorPotencia()">Calcular banco</button><button type="button" class="secundario" onclick="limpiarFactorPotencia()">Limpiar</button><button type="button" class="secundario" onclick="imprimirSeccion('factor')">🖨 Imprimir / Guardar PDF</button></div>
+        <div id="resultadoFactor" class="resultado"></div>
+      </div>
+
+      <div id="seccionCaida" style="display:none;">
+        <div class="grupo-campo">
+          <label for="sistemaCaida">Sistema</label>
+          <select id="sistemaCaida" onchange="syncVoltageOptions()">
+            <option value="3f" selected>Trifásico</option>
+            <option value="1f">Monofásico</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="corrienteCaida">Corriente de carga (A)</label>
+          <input type="number" id="corrienteCaida" step="0.1" placeholder="Ej: 28.5">
+          <div class="error-msg" id="error-corrienteCaida"></div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="voltajeCaida">Tensión del circuito (V)</label>
+          <select id="voltajeCaida"></select>
+          <div class="info-unidad">Puedes elegir tensiones típicas de campo y de tableros industriales.</div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="longitudCaida">Longitud del circuito (ida) en metros</label>
+          <input type="number" id="longitudCaida" step="1" placeholder="Ej: 45">
+          <div class="error-msg" id="error-longitudCaida"></div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="materialCaida">Material del conductor</label>
+          <select id="materialCaida">
+            <option value="cu" selected>Cobre</option>
+            <option value="al">Aluminio</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="seccionCaida">Sección comercial a evaluar</label>
+          <select id="seccionCaida">
+            <option value="1.5">1.5 mm²</option>
+            <option value="2.5">2.5 mm²</option>
+            <option value="4">4 mm²</option>
+            <option value="6">6 mm²</option>
+            <option value="10">10 mm²</option>
+            <option value="16">16 mm²</option>
+            <option value="25">25 mm²</option>
+            <option value="35">35 mm²</option>
+            <option value="50">50 mm²</option>
+            <option value="70" selected>70 mm²</option>
+            <option value="95">95 mm²</option>
+            <option value="120">120 mm²</option>
+            <option value="150">150 mm²</option>
+            <option value="185">185 mm²</option>
+            <option value="240">240 mm²</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="tempConductorCaida">Temperatura estimada del conductor (°C)</label>
+          <select id="tempConductorCaida">
+            <option value="20">20 °C</option>
+            <option value="50">50 °C</option>
+            <option value="70" selected>70 °C</option>
+            <option value="90">90 °C</option>
+          </select>
+          <div class="info-unidad">Se usa para corregir la resistividad del material y afinar la caída de tensión.</div>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="caidaObjetivo">Caída objetivo máxima (%)</label>
+          <input type="number" id="caidaObjetivo" value="3" min="0.5" max="10" step="0.1">
+          <div class="error-msg" id="error-caidaObjetivo"></div>
+        </div>
+
+        <div class="botones oculto-impresion">
+          <button type="button" onclick="calcularCaida()">Calcular caída</button>
+          <button type="button" class="secundario" onclick="limpiarCaida()">Limpiar</button>
+          <button type="button" class="secundario" onclick="imprimirSeccion('caida')">🖨 Imprimir / Guardar PDF</button>
+        </div>
+
+        <div id="resultadoCaida" class="resultado"></div>
+      </div>
+
+      <div id="historialPanel" class="historial-panel oculto-impresion">
+        <div class="historial-head">
+          <strong>Historial de cálculos</strong>
+          <div class="hist-item-actions">
+            <button type="button" class="modo-btn" onclick="toggleHistorial()" id="btnHistorial">📚 Ver / ocultar</button>
+            <button type="button" class="modo-btn" onclick="limpiarHistorial()">🗑 Limpiar historial</button>
+          </div>
+        </div>
+        <div id="historialLista" class="historial-lista"></div>
+      </div>
+
+
+      <div id="panelDatos" class="panel-utilidades oculto-impresion">
+        <div class="historial-head">
+          <strong>Protección y respaldo local</strong>
+          <div class="hist-item-actions">
+            <button type="button" class="modo-btn" onclick="togglePanelDatos()">🔐 Ver / ocultar</button>
+          </div>
+        </div>
+        <p>Controla si la app guarda formularios e historial en este dispositivo. También puedes exportar un respaldo JSON o borrar todos los datos locales en un solo paso.</p>
+
+        <label class="switch-line" for="autoSaveToggle">
+          <input type="checkbox" id="autoSaveToggle" onchange="toggleAutoSave()">
+          <span><strong>Autoguardado local</strong><br><span class="calc-mini-note">Si lo desactivas, se limpia el historial y ya no se almacenan formularios en este equipo.</span></span>
+        </label>
+
+        <div class="panel-grid">
+          <button type="button" class="modo-btn" onclick="exportarRespaldo()">💾 Exportar respaldo</button>
+          <button type="button" class="modo-btn" onclick="document.getElementById('backupFile').click()">📂 Importar respaldo</button>
+          <button type="button" class="modo-btn" onclick="borrarDatosLocales()">🧹 Borrar datos locales</button>
+          <button type="button" class="modo-btn" onclick="toggleHistorial(true)">📚 Abrir historial</button>
+        </div>
+        <input type="file" id="backupFile" accept=".json,application/json" style="display:none" onchange="importarRespaldo(event)">
+        <div id="dataStatus" class="hist-empty" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="footer-app oculto-impresion">
+        <a href="https://pasir.anibalcopitan.com/#" target="_blank" rel="noopener noreferrer">Pasir Industrial</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const HP_TO_KW = 0.746;
+    const STORAGE_MODE_KEY = 'calc-industrial-mode';
+    const STORAGE_SOCIAL_KEY = 'calc-industrial-social-open';
+    const STORAGE_DATA_KEY = 'calc-industrial-form-data';
+    const STORAGE_HISTORY_KEY = 'calc-industrial-history';
+    const STORAGE_SAVE_ENABLED_KEY = 'calc-industrial-save-enabled';
+    const MAX_HISTORY = 12;
+
+    const RHO_CU = 0.018;
+    const RHO_AL = 0.029;
+    const ALPHA_CU = 0.00393;
+    const ALPHA_AL = 0.00403;
+
+    const seccionesMM = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
+    const ampacidadBase = {
+      cu: {
+        pvc: { 1.5: 15, 2.5: 21, 4: 28, 6: 36, 10: 50, 16: 68, 25: 89, 35: 110, 50: 140, 70: 175, 95: 210, 120: 240, 150: 275, 185: 315, 240: 380 },
+        xlpe: { 1.5: 18, 2.5: 24, 4: 32, 6: 41, 10: 57, 16: 76, 25: 101, 35: 125, 50: 157, 70: 196, 95: 234, 120: 269, 150: 309, 185: 353, 240: 415 }
+      },
+      al: {
+        pvc: { 16: 54, 25: 71, 35: 87, 50: 108, 70: 136, 95: 164, 120: 188, 150: 216, 185: 246, 240: 292 },
+        xlpe: { 16: 61, 25: 80, 35: 99, 50: 122, 70: 153, 95: 184, 120: 211, 150: 242, 185: 276, 240: 328 }
+      }
+    };
+
+    const tempFactorTable = {
+      pvc: { '25': 1.03, '30': 1.00, '35': 0.94, '40': 0.87, '45': 0.79, '50': 0.71, '55': 0.61, '60': 0.50 },
+      xlpe: { '25': 1.04, '30': 1.00, '35': 0.96, '40': 0.91, '45': 0.87, '50': 0.82, '55': 0.76, '60': 0.71 }
+    };
+
+    const groupingFactorTable = { '2': 1.00, '3': 1.00, '4': 0.80, '7': 0.70, '10': 0.50 };
+    const installFactorTable = { tuberia: 1.00, bandeja: 1.05, aire: 1.12 };
+
+    const awgTable = [
+      { awg: "14",  mm2: 2.08 }, { awg: "12",  mm2: 3.31 }, { awg: "10",  mm2: 5.26 },
+      { awg: "8",   mm2: 8.37 }, { awg: "6",   mm2: 13.30 }, { awg: "4",   mm2: 21.10 },
+      { awg: "3",   mm2: 26.70 }, { awg: "2",   mm2: 33.60 }, { awg: "1",   mm2: 42.40 },
+      { awg: "1/0", mm2: 53.50 }, { awg: "2/0", mm2: 67.40 }, { awg: "3/0", mm2: 85.00 },
+      { awg: "4/0", mm2: 107.00 }
+    ];
+
+    function nowStamp() {
+      const now = new Date();
+      return now.toLocaleString('es-PE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function aplicarModoGuardado() {
+      const modo = localStorage.getItem(STORAGE_MODE_KEY);
+      document.body.classList.remove('light', 'dark');
+      document.body.classList.add(modo === 'light' ? 'light' : 'dark');
+    }
+
+    function toggleModo() {
+      document.body.classList.toggle("dark");
+      document.body.classList.toggle("light");
+      const modo = document.body.classList.contains('light') ? 'light' : 'dark';
+      localStorage.setItem(STORAGE_MODE_KEY, modo);
+    }
+
+    function toggleSocialLinks(forceState = null) {
+      const panel = document.getElementById('topSocialLinks');
+      if (!panel) return;
+      const shouldOpen = forceState !== null ? forceState : !panel.classList.contains('visible');
+      panel.classList.toggle('visible', shouldOpen);
+      if (isLocalSaveEnabled()) localStorage.setItem(STORAGE_SOCIAL_KEY, shouldOpen ? '1' : '0');
+    }
+
+    function mostrarSeccion(seccion) {
+      const sections = {
+        protecciones: document.getElementById("seccionProtecciones"),
+        conductores: document.getElementById("seccionConductores"),
+        caida: document.getElementById("seccionCaida"),
+        factor: document.getElementById("seccionFactor")
+      };
+      const buttons = {
+        protecciones: document.getElementById("btnProtecciones"),
+        conductores: document.getElementById("btnConductores"),
+        caida: document.getElementById("btnCaida"),
+        factor: document.getElementById("btnFactor")
+      };
+
+      Object.values(sections).forEach(sec => { if (sec) sec.style.display = "none"; });
+      Object.values(buttons).forEach(btn => { if (btn) btn.classList.remove("activo"); });
+
+      const key = sections[seccion] ? seccion : 'protecciones';
+      sections[key].style.display = "block";
+      buttons[key].classList.add("activo");
+    }
+
+    function setError(id, message) {
+      const input = document.getElementById(id);
+      const box = document.getElementById(`error-${id}`);
+      if (input) input.classList.add('input-error');
+      if (box) {
+        box.textContent = message;
+        box.style.display = 'block';
+      }
+    }
+
+    function clearError(id) {
+      const input = document.getElementById(id);
+      const box = document.getElementById(`error-${id}`);
+      if (input) input.classList.remove('input-error');
+      if (box) {
+        box.textContent = '';
+        box.style.display = 'none';
+      }
+    }
+
+    function clearErrors(ids) {
+      ids.forEach(clearError);
+    }
+
+    function getNumber(id) {
+      return parseFloat(document.getElementById(id).value);
+    }
+
+    function getTempFactor(aislamiento, temp) {
+      return tempFactorTable[aislamiento]?.[String(temp)] ?? 1;
+    }
+
+    function getGroupingFactor(value) {
+      return groupingFactorTable[String(value)] ?? 1;
+    }
+
+    function getInstallFactor(value) {
+      return installFactorTable[value] ?? 1;
+    }
+
+    function getAmpacidadBase(material, aislamiento, seccion) {
+      return ampacidadBase[material]?.[aislamiento]?.[seccion] ?? null;
+    }
+
+    function isLocalSaveEnabled() {
+      return localStorage.getItem(STORAGE_SAVE_ENABLED_KEY) !== '0';
+    }
+
+    function updateDataStatus(message = '') {
+      const status = document.getElementById('dataStatus');
+      const toggle = document.getElementById('autoSaveToggle');
+      if (toggle) toggle.checked = isLocalSaveEnabled();
+      if (!status) return;
+      const historyCount = isLocalSaveEnabled() ? getHistory().length : 0;
+      status.innerHTML = isLocalSaveEnabled()
+        ? `<strong>Estado:</strong> Autoguardado activo. Historial disponible: <strong>${historyCount}</strong> cálculo(s). ${message}`
+        : `<strong>Estado:</strong> Autoguardado desactivado. La app no conserva formularios ni historial en este dispositivo. ${message}`;
+    }
+
+    function togglePanelDatos(forceState = null) {
+      const panel = document.getElementById('panelDatos');
+      if (!panel) return;
+      const shouldShow = forceState !== null ? forceState : panel.style.display !== 'block';
+      panel.style.display = shouldShow ? 'block' : 'none';
+      updateDataStatus('');
+    }
+
+    function toggleAutoSave(forceValue = null) {
+      const toggle = document.getElementById('autoSaveToggle');
+      const enabled = forceValue !== null ? forceValue : !!toggle?.checked;
+      localStorage.setItem(STORAGE_SAVE_ENABLED_KEY, enabled ? '1' : '0');
+      if (!enabled) {
+        localStorage.removeItem(STORAGE_DATA_KEY);
+        localStorage.removeItem(STORAGE_HISTORY_KEY);
+        localStorage.removeItem(STORAGE_SOCIAL_KEY);
+        limpiarProtecciones();
+        limpiarConductores();
+        limpiarCaida();
+      }
+      if (toggle) toggle.checked = enabled;
+      renderHistorial();
+      updateDataStatus(enabled ? 'Puedes seguir trabajando y la app volverá a guardar cambios.' : 'Se limpiaron los datos locales por privacidad.');
+    }
+
+    function exportarRespaldo() {
+      const payload = {
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        formData: isLocalSaveEnabled() ? JSON.parse(localStorage.getItem(STORAGE_DATA_KEY) || '{}') : {},
+        history: isLocalSaveEnabled() ? getHistory() : [],
+        preferences: {
+          mode: localStorage.getItem(STORAGE_MODE_KEY) || 'dark'
+        }
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `respaldo-calculadora-industrial-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      updateDataStatus('Respaldo exportado correctamente.');
+    }
+
+    function importarRespaldo(event) {
+      const file = event?.target?.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          localStorage.setItem(STORAGE_SAVE_ENABLED_KEY, '1');
+          localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(data.formData || {}));
+          localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify((data.history || []).slice(0, MAX_HISTORY)));
+          if (data.preferences?.mode) {
+            localStorage.setItem(STORAGE_MODE_KEY, data.preferences.mode);
+            aplicarModoGuardado();
+          }
+          loadFormData();
+          renderHistorial();
+          updateDataStatus('Respaldo importado correctamente.');
+        } catch (err) {
+          alert('No se pudo importar el respaldo. Verifica que sea un archivo JSON válido de la calculadora.');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function borrarDatosLocales() {
+      localStorage.removeItem(STORAGE_DATA_KEY);
+      localStorage.removeItem(STORAGE_HISTORY_KEY);
+      localStorage.removeItem(STORAGE_SOCIAL_KEY);
+      limpiarProtecciones();
+      limpiarConductores();
+      limpiarCaida();
+      renderHistorial();
+      updateDataStatus('Datos locales eliminados.');
+    }
+
+    function getResistivity(material, temp = 20) {
+      const base = material === 'al' ? RHO_AL : RHO_CU;
+      const alpha = material === 'al' ? ALPHA_AL : ALPHA_CU;
+      return base * (1 + alpha * (Number(temp) - 20));
+    }
+
+    function preparePrintReport(section) {
+      const header = document.getElementById('printHeader');
+      const footer = document.getElementById('printFooter');
+      const map = {
+        protecciones: 'Reporte técnico · Protecciones de motor',
+        conductores: 'Reporte técnico · Selección de conductor',
+        caida: 'Reporte técnico · Caída de tensión',
+        factor: 'Reporte técnico · Corrección del factor de potencia'
+      };
+      if (header) {
+        header.innerHTML = `
+          <div class="print-report-box">
+            <h1>Calculadora Industrial PASIR</h1>
+            <p><strong>${map[section] || 'Reporte técnico'}</strong></p>
+            <p>Fecha: ${nowStamp()} · Código: REP-${new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 12)}</p>
+            <p>Documento de apoyo para revisión técnica preliminar.</p>
+          </div>`;
+      }
+      if (footer) {
+        footer.innerHTML = `
+          <div style="margin-top:14px; padding-top:8px; border-top:1px solid #cbd5e1;">
+            <p style="font-size:8.5pt; color:#475569; margin:0;">PASIR Industrial · Resultado referencial. Valida con normativa, fabricante y memoria de cálculo final.</p>
+          </div>`;
+      }
+    }
+
+    function getHistory() {
+      if (!isLocalSaveEnabled()) return [];
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_HISTORY_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveHistoryEntry(entry) {
+      if (!isLocalSaveEnabled()) return;
+      const data = getHistory();
+      data.unshift(entry);
+      localStorage.setItem(STORAGE_HISTORY_KEY, JSON.stringify(data.slice(0, MAX_HISTORY)));
+      renderHistorial();
+      updateDataStatus('');
+    }
+
+    function toggleHistorial(forceState = null) {
+      const panel = document.getElementById('historialPanel');
+      const lista = document.getElementById('historialLista');
+      if (!panel || !lista) return;
+      const shouldShow = forceState !== null ? forceState : panel.style.display !== 'block';
+      panel.style.display = shouldShow ? 'block' : 'none';
+      renderHistorial();
+    }
+
+    function limpiarHistorial() {
+      localStorage.removeItem(STORAGE_HISTORY_KEY);
+      renderHistorial();
+      updateDataStatus('Historial eliminado.');
+    }
+
+    function aplicarHistorial(index) {
+      const item = getHistory()[index];
+      if (!item) return;
+      Object.entries(item.data || {}).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el && value !== undefined) el.value = value;
+      });
+      saveFormData();
+      if (item.tipo === 'protecciones') {
+        mostrarSeccion('protecciones');
+        calcularProtecciones();
+      } else if (item.tipo === 'conductores') {
+        mostrarSeccion('conductores');
+        calcularConductor();
+      } else {
+        mostrarSeccion('caida');
+        calcularCaida();
+      }
+    }
+
+    function renderHistorial() {
+      const lista = document.getElementById('historialLista');
+      if (!lista) return;
+      if (!isLocalSaveEnabled()) {
+        lista.innerHTML = '<div class="hist-empty">El autoguardado local está desactivado. Actívalo para volver a conservar historial en este dispositivo.</div>';
+        return;
+      }
+      const data = getHistory();
+      if (!data.length) {
+        lista.innerHTML = '<div class="hist-empty">Aún no hay cálculos guardados. Cuando calcules motor, conductor o caída de tensión, aparecerán aquí.</div>';
+        return;
+      }
+      lista.innerHTML = data.map((item, index) => `
+        <div class="hist-item">
+          <div class="hist-item-top">
+            <div>
+              <strong>${item.titulo}</strong>
+              <small>${item.fecha}</small>
+            </div>
+            <span class="estado-pill ${item.estado === 'ok' ? 'ok' : 'warn'}">${item.estadoTexto}</span>
+          </div>
+          <small>${item.resumen}</small>
+          <div class="hist-item-actions">
+            <button type="button" class="modo-btn" onclick="aplicarHistorial(${index})">↺ Cargar</button>
+          </div>
+        </div>`).join('');
+    }
+
+    function saveFormData() {
+      const ids = [
+        'potenciaHp', 'potenciaKw', 'normaMotor', 'sistemaMotor', 'voltaje', 'eficiencia', 'fp', 'arranque', 'corrientePlaca', 'flcNec', 'relacionArranque', 'tiempoArranque', 'iccDisponible', 'posicionRele', 'serviceFactor', 'tempRiseMotor', 'rpmMotor', 'frecuenciaMotor', 'polosMotor', 'regimenMotor', 'tipoCargaMotor', 'arranquesHora', 'tensionBobina', 'coordinacionIEC',
+        'sistemaConductor', 'tipoCarga', 'corrienteCond', 'factorDiseno',
+        'voltajeCond', 'longitud', 'material', 'caidaMax', 'aislamiento', 'tempAmbiente', 'metodoInstalacion', 'conductoresCargados',
+        'sistemaCaida', 'corrienteCaida', 'voltajeCaida', 'longitudCaida', 'materialCaida', 'seccionCaida', 'tempConductorCaida', 'caidaObjetivo',
+        'modoPF','potMotorPF','eficienciaPF','potActivaPF','sistemaPF','voltajePF','frecuenciaPF','fpActualPF','fpObjetivoPF','corrienteVacioPF','armonicosPF','conexionPF','tipoBancoPF'
+      ];
+      if (!isLocalSaveEnabled()) return;
+      const data = {};
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) data[id] = el.value;
+      });
+      localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(data));
+      updateDataStatus('');
+    }
+
+    function loadFormData() {
+      if (!isLocalSaveEnabled()) return;
+      const raw = localStorage.getItem(STORAGE_DATA_KEY);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        Object.keys(data).forEach(id => {
+          const el = document.getElementById(id);
+          if (el && data[id] !== undefined) el.value = data[id];
+        });
+      } catch (e) {
+        console.warn('No se pudo cargar estado guardado', e);
+      }
+    }
+
+    const VOLTAGES_MONO = ['110', '120', '127', '220', '230', '240'];
+    const VOLTAGES_TRI = ['208', '220', '230', '380', '400', '415', '440', '460', '480', '600'];
+
+    function buildVoltageOptions(values, selectedValue) {
+      return values.map(v => `<option value="${v}" ${String(selectedValue) === String(v) ? 'selected' : ''}>${v} V</option>`).join('');
+    }
+
+    function syncSingleVoltageSelect(selectId, values, fallback) {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      const previous = select.value || fallback;
+      const selected = values.includes(previous) ? previous : fallback;
+      select.innerHTML = buildVoltageOptions(values, selected);
+      select.value = selected;
+    }
+
+    function syncVoltageOptions() {
+      const sistemaMotor = document.getElementById('sistemaMotor')?.value || '3f';
+      const sistemaConductor = document.getElementById('sistemaConductor')?.value || '3f';
+      const sistemaCaida = document.getElementById('sistemaCaida')?.value || '3f';
+
+      syncSingleVoltageSelect('voltaje', sistemaMotor === '3f' ? VOLTAGES_TRI : VOLTAGES_MONO, sistemaMotor === '3f' ? '380' : '220');
+      syncSingleVoltageSelect('voltajeCond', sistemaConductor === '3f' ? VOLTAGES_TRI : VOLTAGES_MONO, sistemaConductor === '3f' ? '380' : '220');
+      syncSingleVoltageSelect('voltajeCaida', sistemaCaida === '3f' ? VOLTAGES_TRI : VOLTAGES_MONO, sistemaCaida === '3f' ? '380' : '220');
+    }
+
+    function hpToKw() {
+      const hpField = document.getElementById("potenciaHp");
+      const kwField = document.getElementById("potenciaKw");
+      if (!hpField || !kwField) return;
+      const hpValue = hpField.value.trim();
+      if (hpValue === '') {
+        kwField.value = '';
+        saveFormData();
+        return;
+      }
+      const hp = parseFloat(hpValue);
+      if (!isNaN(hp)) kwField.value = (hp * HP_TO_KW).toFixed(2);
+      saveFormData();
+    }
+
+    function kwToHp() {
+      const kwField = document.getElementById("potenciaKw");
+      const hpField = document.getElementById("potenciaHp");
+      if (!kwField || !hpField) return;
+      const kwValue = kwField.value.trim();
+      if (kwValue === '') {
+        hpField.value = '';
+        saveFormData();
+        return;
+      }
+      const kw = parseFloat(kwValue);
+      if (!isNaN(kw)) hpField.value = (kw / HP_TO_KW).toFixed(2);
+      saveFormData();
+    }
+
+    function actualizarFactorPorCarga() {
+      const tipo = document.getElementById("tipoCarga").value;
+      const factorSelect = document.getElementById("factorDiseno");
+      if (!factorSelect) return;
+      if (tipo === "motor") factorSelect.value = "1.25";
+      else if (tipo === "iluminacion") factorSelect.value = "1.00";
+      else if (tipo === "tomas") factorSelect.value = "1.15";
+      else factorSelect.value = "1.20";
+      saveFormData();
+    }
+
+    function validarProtecciones() {
+      clearErrors(['potenciaHp', 'potenciaKw', 'eficiencia', 'fp']);
+      let ok = true;
+
+      const potenciaKw = getNumber('potenciaKw');
+      const eficiencia = getNumber('eficiencia');
+      const fp = getNumber('fp');
+
+      if (isNaN(potenciaKw) || potenciaKw <= 0) {
+        setError('potenciaKw', 'Ingresa una potencia en kW mayor a 0.');
+        ok = false;
+      }
+      if (isNaN(eficiencia) || eficiencia < 0.5 || eficiencia > 1) {
+        setError('eficiencia', 'La eficiencia debe estar entre 0.50 y 1.00.');
+        ok = false;
+      }
+      if (isNaN(fp) || fp <= 0.1 || fp > 1) {
+        setError('fp', 'El factor de potencia debe estar entre 0.10 y 1.00.');
+        ok = false;
+      }
+      return ok;
+    }
+
+    function setModoMotor(modo) {
+      const root = document.getElementById('motorUxRoot');
+      const rapido = document.getElementById('modoRapidoBtn');
+      const pro = document.getElementById('modoProBtn');
+      const texto = document.getElementById('textoModoMotor');
+      const profesional = modo === 'profesional';
+      root?.classList.toggle('modo-profesional', profesional);
+      rapido?.classList.toggle('activo', !profesional);
+      pro?.classList.toggle('activo', profesional);
+      if (texto) texto.textContent = profesional
+        ? 'Modo profesional: completa placa, datos mecánicos, arranque y coordinación cuando dispongas de ellos.'
+        : 'Ingresa los datos esenciales. Los parámetros avanzados usarán valores orientativos y se marcarán como estimados.';
+      localStorage.setItem('modoMotorPASIR', modo);
+    }
+
+    function datosMecanicosMotor() {
+      const rpm = getNumber('rpmMotor');
+      const hz = getNumber('frecuenciaMotor');
+      const polos = getNumber('polosMotor');
+      if (!(rpm > 0 && hz > 0 && polos > 0)) return null;
+      const ns = 120 * hz / polos;
+      const slip = ns > 0 ? ((ns - rpm) / ns) * 100 : NaN;
+      return { rpm, hz, polos, ns, slip };
+    }
+
+    function actualizarCamposNormaMotor() {
+      const norma = document.getElementById('normaMotor')?.value || 'iec';
+      const necFields = document.getElementById('camposNecMotor');
+      const flcField = document.getElementById('campoFlcNec');
+      if (necFields) necFields.style.display = norma === 'nec' ? 'block' : 'none';
+      if (flcField) flcField.style.display = norma === 'nec' ? 'block' : 'none';
+    }
+
+    function actualizarSugerenciasMotor() {
+      const arranque = document.getElementById('arranque')?.value || '1';
+      const carga = document.getElementById('tipoCargaMotor')?.value || 'otra';
+      const relacion = document.getElementById('relacionArranque');
+      const tiempo = document.getElementById('tiempoArranque');
+      const arranquesHora = document.getElementById('arranquesHora');
+      const campoRele = document.getElementById('campoPosicionRele');
+      const ayuda = document.getElementById('sugerenciaCargaMotor');
+
+      // Valores orientativos de partida. No sustituyen datos de placa ni curvas del fabricante.
+      const cargas = {
+        bomba:       { directo:[6.0,5,6],  estrella:[2.2,8,6],  suave:[3.0,8,6],  vfd:[1.5,5,10], texto:'Bomba centrífuga: carga normalmente moderada al arranque.' },
+        ventilador:  { directo:[6.0,8,6],  estrella:[2.3,10,6], suave:[3.0,10,6], vfd:[1.5,8,10], texto:'Ventilador: la inercia puede alargar la aceleración; verifica el tiempo real.' },
+        compresor:   { directo:[7.0,8,4],  estrella:[2.5,12,4], suave:[3.5,12,4], vfd:[1.6,8,6],  texto:'Compresor: puede exigir mayor par y corriente, especialmente si arranca cargado.' },
+        transportador:{directo:[6.5,10,8], estrella:[2.4,12,8], suave:[3.2,12,8], vfd:[1.5,10,12],texto:'Transportador: el arranque depende de carga, pendiente e inercia del sistema.' },
+        triturador:  { directo:[8.0,15,3], estrella:[3.0,18,3], suave:[4.0,18,3], vfd:[1.8,15,4], texto:'Trituradora / molino: carga severa; confirma par, inercia y curva de aceleración.' },
+        elevador:    { directo:[7.0,10,6], estrella:[2.7,12,6], suave:[3.5,12,6], vfd:[1.7,10,8], texto:'Elevador: requiere revisar par de arranque, frenado y seguridad de la aplicación.' },
+        otra:        { directo:[6.0,5,4],  estrella:[2.2,8,4],  suave:[3.0,8,4],  vfd:[1.5,5,6], texto:'Carga no especificada: se usan valores genéricos conservadores como punto de partida.' }
+      };
+      const claveArranque = arranque === '1' ? 'directo' : arranque === 'estrella' ? 'estrella' : arranque === '0.7' ? 'suave' : 'vfd';
+      const cfg = cargas[carga] || cargas.otra;
+      const [ratio, t, aph] = cfg[claveArranque];
+      if (relacion) relacion.value = ratio;
+      if (tiempo) tiempo.value = t;
+      if (arranquesHora) arranquesHora.value = aph;
+      if (campoRele) campoRele.style.display = arranque === 'estrella' ? 'block' : 'none';
+      if (ayuda) ayuda.textContent = `${cfg.texto} Sugerencia: Ia/In ${ratio.toFixed(1)}, aceleración ${t} s, hasta ${aph} arranques/h como referencia inicial.`;
+    }
+
+    // Compatibilidad con llamadas antiguas del proyecto.
+    function actualizarParametrosArranque() {
+      actualizarSugerenciasMotor();
+    }
+
+    function siguienteCalibreComercial(valor) {
+      const calibres = [2,4,6,10,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600];
+      return calibres.find(x => x >= valor) || Math.ceil(valor / 100) * 100;
+    }
+
+    function claseRelePorTiempo(segundos) {
+      if (segundos <= 10) return 'Clase 10A / 10 como punto de partida';
+      if (segundos <= 20) return 'Clase 20 como punto de partida';
+      return 'Clase 30 o protección electrónica ajustable';
+    }
+
+    const CONTACTOR_AC3_STEPS = [9,12,18,25,32,40,50,65,80,95,115,150,185,225,265,330,400,500,630];
+    const RELE_THERMAL_RANGES = [
+      [0.10,0.16],[0.16,0.25],[0.25,0.40],[0.40,0.63],[0.63,1.00],[1.00,1.60],[1.60,2.50],[2.50,4.00],[4.00,6.00],
+      [5.50,8.00],[7.00,10.00],[9.00,13.00],[12.00,18.00],[17.00,25.00],[23.00,32.00],[30.00,40.00],[37.00,50.00],
+      [48.00,65.00],[55.00,70.00],[63.00,80.00],[80.00,104.00],[95.00,120.00],[110.00,140.00],[130.00,170.00],[150.00,200.00]
+    ];
+
+    function fmtAmp(valor) {
+      return Number.isFinite(valor) ? valor.toFixed(valor < 10 ? 2 : 1) : '-';
+    }
+
+    function recomendarITMComercial(valor) {
+      const rating = siguienteCalibreComercial(valor);
+      return {
+        rating,
+        texto: `${rating} A`,
+        detalle: 'Tomar el valor comercial inmediato superior y verificar curva/disparo y poder de corte.'
+      };
+    }
+
+    function recomendarContactorAC3(valor) {
+      const ie = CONTACTOR_AC3_STEPS.find(x => x >= valor) || Math.ceil(valor / 50) * 50;
+      return {
+        ie,
+        texto: `${ie} A AC-3`,
+        detalle: 'Selecciona el siguiente calibre comercial AC-3 a la tensión de servicio del motor.'
+      };
+    }
+
+    function recomendarReleTermico(valor) {
+      const rango = RELE_THERMAL_RANGES.find(([min,max]) => valor >= min && valor <= max)
+        || RELE_THERMAL_RANGES.find(([min,max]) => valor < min)
+        || [Math.floor(valor), Math.ceil(valor * 1.2)];
+      return {
+        min: rango[0],
+        max: rango[1],
+        texto: `${fmtAmp(rango[0])} – ${fmtAmp(rango[1])} A`,
+        detalle: 'Usa el primer rango comercial que contenga la corriente de ajuste.'
+      };
+    }
+
+    const MCCB_FRAMES = [63,100,125,160,200,250,320,400,500,630,800,1000,1250,1600];
+
+    function siguienteBastidorMCCB(valor) {
+      return MCCB_FRAMES.find(x => x >= valor) || Math.ceil(valor / 250) * 250;
+    }
+
+    function recomendacionProteccionMotorIndustrial(InMotor, corrienteArranque, iccDisponible, arranque) {
+      if (arranque === 'vfd') {
+        return {
+          nivel: 'vfd',
+          titulo: 'Protección de entrada del VFD',
+          equipo: 'MCCB/fusible según manual del variador',
+          detalle: 'La selección debe partir de la corriente nominal de entrada del VFD, no solo de la corriente del motor.'
+        };
+      }
+
+      if (InMotor <= 63) {
+        const calibre = siguienteCalibreComercial(InMotor);
+        return {
+          nivel: 'mpcb',
+          titulo: 'Guardamotor / MPCB recomendado',
+          equipo: `MPCB regulable · calibre comercial ≥ ${calibre} A`,
+          detalle: 'Preferible cuando existe un rango térmico que contenga la corriente de placa y su poder de corte es suficiente.',
+          calibre,
+          irObjetivo: InMotor,
+          iiMin: corrienteArranque
+        };
+      }
+
+      const frame = siguienteBastidorMCCB(InMotor);
+      const irRatio = InMotor / frame;
+      const iiRatio = corrienteArranque / frame;
+      const altaCorriente = InMotor > 520;
+      return {
+        nivel: altaCorriente ? 'mccb_rele' : 'mccb',
+        titulo: altaCorriente ? 'MCCB + relé electrónico de motor' : 'MPCB de alta corriente / MCCB',
+        equipo: `${altaCorriente ? 'MCCB' : 'MCCB o MPCB de alta corriente'} · bastidor comercial ${frame} A`,
+        detalle: altaCorriente
+          ? 'Para corrientes muy altas conviene separar cortocircuito y sobrecarga o usar una unidad electrónica específica de protección de motor.'
+          : 'En esta zona existen soluciones de protección de motor de alto calibre y MCCB; la elección final depende del rango ajustable, Icu/Ics y coordinación.',
+        frame,
+        irObjetivo: InMotor,
+        irRatio,
+        iiMin: corrienteArranque,
+        iiRatio,
+        icc: iccDisponible
+      };
+    }
+
+    function bloqueProteccionIndustrial(rec, corrienteArranque, iccDisponible) {
+      if (!rec || rec.nivel === 'vfd') {
+        return bloqueComercial('Protección de entrada', rec?.equipo || 'Según fabricante', rec?.detalle || 'Verifica el manual del variador.');
+      }
+
+      if (rec.nivel === 'mpcb') {
+        const iccTxt = Number.isFinite(iccDisponible) && iccDisponible > 0
+          ? `Poder de corte: Icu/Icn ≥ ${iccDisponible.toFixed(1)} kA.`
+          : 'Ingresa la Icc disponible para validar el poder de corte.';
+        return `<div class="recomendacion-comercial">
+          <span class="mini-badge">Selección industrial</span>
+          <span class="valor-comercial">${rec.titulo}</span>
+          <div class="sub-comercial"><strong>Equipo:</strong> ${rec.equipo}</div>
+          <div class="sub-comercial"><strong>Ajuste térmico Ir:</strong> ≈ ${rec.irObjetivo.toFixed(1)} A, usando la corriente real de placa cuando esté disponible.</div>
+          <div class="sub-comercial"><strong>Disparo magnético Im/Ii:</strong> debe tolerar Ia ≈ ${corrienteArranque.toFixed(0)} A durante el tiempo de arranque; validar en la curva del equipo.</div>
+          <div class="sub-comercial"><strong>Icu/Icn:</strong> ${iccTxt}</div>
+        </div>`;
+      }
+
+      const rangoInstantaneo = rec.iiRatio <= 10
+        ? `Buscar un disparador cuyo rango de Ii/Im permita un ajuste superior a ${rec.iiRatio.toFixed(1)}×In del bastidor. Un rango ajustable del orden de 5–10×In o más amplio puede ser candidato, según fabricante.`
+        : `La Ia estimada equivale a ${rec.iiRatio.toFixed(1)}×In del bastidor. Un disparador 5–10×In podría disparar durante el arranque; conviene una unidad específica de motor, rango instantáneo más amplio o revisar el método de arranque.`;
+      const iccTxt = Number.isFinite(iccDisponible) && iccDisponible > 0
+        ? `Icu/Ics requerido ≥ ${iccDisponible.toFixed(1)} kA.`
+        : 'Icu/Ics pendiente: ingresa la Icc disponible del tablero.';
+      return `<div class="recomendacion-comercial">
+        <span class="mini-badge">Selección industrial</span>
+        <span class="valor-comercial">${rec.titulo}</span>
+        <div class="sub-comercial"><strong>Equipo:</strong> ${rec.equipo}</div>
+        <div class="sub-comercial"><strong>Ir / L objetivo:</strong> ≈ ${rec.irObjetivo.toFixed(1)} A (${rec.irRatio.toFixed(2)}× del bastidor de ${rec.frame} A) si el MCCB integra la protección de sobrecarga.</div>
+        <div class="sub-comercial"><strong>Ii / Im mínimo de coordinación:</strong> por encima de Ia ≈ ${rec.iiMin.toFixed(0)} A (${rec.iiRatio.toFixed(1)}× del bastidor). ${rangoInstantaneo}</div>
+        <div class="sub-comercial"><strong>Poder de corte:</strong> ${iccTxt}</div>
+        <div class="sub-comercial">${rec.detalle}</div>
+      </div>`;
+    }
+
+    function bloqueComercial(titulo, valorPrincipal, nota) {
+      return `<div class="recomendacion-comercial"><span class="mini-badge">Comercial sugerido</span><span class="valor-comercial">${titulo}: ${valorPrincipal}</span><div class="sub-comercial">${nota}</div></div>`;
+    }
+
+    function recomendacionProteccionIEC(InMotor, relacionArranque, arranque) {
+      if (arranque === 'vfd') {
+        return {
+          equipo: 'Protección de entrada del VFD según fabricante',
+          curva: 'No aplicar automáticamente curva C/D con la corriente del motor',
+          detalle: 'Dimensionar con la corriente nominal de entrada del variador y la protección indicada por su fabricante.'
+        };
+      }
+      if (InMotor > 63) {
+        return {
+          equipo: InMotor > 520 ? 'MCCB + protección electrónica/relé de motor' : 'MPCB de alta corriente / MCCB industrial IEC 60947-2',
+          curva: 'Disparo térmico-electrónico y/o magnético ajustable',
+          detalle: 'La app calculará debajo un bastidor comercial y los objetivos de Ir e Ii/Im; valida siempre el rango real del fabricante y la coordinación.'
+        };
+      }
+      if (relacionArranque < 5) {
+        return {
+          equipo: 'MCB industrial o MPCB',
+          curva: 'Curva C candidata',
+          detalle: 'Verificar que la corriente y el tiempo de arranque queden por debajo de la zona de disparo instantáneo.'
+        };
+      }
+      if (relacionArranque < 10) {
+        return {
+          equipo: 'MCB curva D o, preferentemente, MPCB',
+          curva: 'Curva D candidata',
+          detalle: 'Una curva C puede entrar en su zona magnética durante un arranque de motor elevado. Confirmar con curva tiempo-corriente.'
+        };
+      }
+      return {
+        equipo: 'MPCB/MCCB industrial IEC 60947-2',
+        curva: 'Magnético ajustable recomendado',
+        detalle: 'La corriente de arranque es alta para basarse únicamente en una curva fija C/D. Se requiere coordinación con Icc y curva del fabricante.'
+      };
+    }
+
+    function calcularProtecciones() {
+      if (!validarProtecciones()) return;
+
+      clearErrors(['corrientePlaca','flcNec','relacionArranque','tiempoArranque']);
+
+      const potenciaKw = getNumber('potenciaKw');
+      const sistema = document.getElementById('sistemaMotor').value;
+      const voltaje = getNumber('voltaje');
+      const eficiencia = getNumber('eficiencia');
+      const fp = getNumber('fp');
+      const arranque = document.getElementById('arranque').value;
+      const norma = document.getElementById('normaMotor')?.value || 'iec';
+      const textoSistema = sistema === '3f' ? 'Trifásico' : 'Monofásico';
+      const corrientePlacaRaw = getNumber('corrientePlaca');
+      const flcNecRaw = getNumber('flcNec');
+      const relacionArranque = getNumber('relacionArranque');
+      const tiempoArranque = getNumber('tiempoArranque');
+      const iccDisponible = getNumber('iccDisponible');
+
+      let ok = true;
+      if (!isNaN(corrientePlacaRaw) && corrientePlacaRaw <= 0) {
+        setError('corrientePlaca', 'La corriente de placa debe ser mayor a 0 A o dejarse vacía.');
+        ok = false;
+      }
+      if (norma === 'nec' && !isNaN(flcNecRaw) && flcNecRaw <= 0) {
+        setError('flcNec', 'La FLC NEC debe ser mayor a 0 A o dejarse vacía.');
+        ok = false;
+      }
+      if (isNaN(relacionArranque) || relacionArranque < 1 || relacionArranque > 20) {
+        setError('relacionArranque', 'Usa una relación Ia/In entre 1 y 20.');
+        ok = false;
+      }
+      if (isNaN(tiempoArranque) || tiempoArranque < 0.5 || tiempoArranque > 120) {
+        setError('tiempoArranque', 'Usa un tiempo de arranque entre 0.5 y 120 s.');
+        ok = false;
+      }
+      if (!ok) return;
+
+      const InCalculada = sistema === '3f'
+        ? (potenciaKw * 1000) / (Math.sqrt(3) * voltaje * fp * eficiencia)
+        : (potenciaKw * 1000) / (voltaje * fp * eficiencia);
+
+      const tienePlaca = Number.isFinite(corrientePlacaRaw) && corrientePlacaRaw > 0;
+      const InMotor = tienePlaca ? corrientePlacaRaw : InCalculada;
+      const corrienteArranque = InMotor * relacionArranque;
+      const calibreBaseIEC = siguienteCalibreComercial(InMotor);
+      const claseRele = claseRelePorTiempo(tiempoArranque);
+      const proteccionIEC = recomendacionProteccionIEC(InMotor, relacionArranque, arranque);
+      const itmIEC = recomendarITMComercial(InMotor);
+      const contactorGeneral = recomendarContactorAC3(InMotor);
+      const releGeneral = recomendarReleTermico(InMotor);
+      const proteccionIndustrial = recomendacionProteccionMotorIndustrial(InMotor, corrienteArranque, iccDisponible, arranque);
+      const poderCorte = Number.isFinite(iccDisponible) && iccDisponible > 0
+        ? `Icu/Icn requerido ≥ ${iccDisponible.toFixed(1)} kA en el punto de instalación.`
+        : 'Icu/Icn pendiente: ingresa la Icc disponible del tablero para verificar poder de corte.';
+      const itmNEC = recomendarITMComercial(InMotor);
+
+      let resultadoHTML = `
+        <div class="resultado-cabecera">
+          <div class="resultado-titulo">Ficha técnica · Protecciones de motor</div>
+          <div class="resultado-fecha">${nowStamp()}</div>
+        </div>
+
+        <div class="resumen-grid">
+          <div class="dato-box"><small>Motor</small><strong>${potenciaKw.toFixed(2)} kW · ${(potenciaKw / HP_TO_KW).toFixed(2)} HP</strong></div>
+          <div class="dato-box"><small>Norma</small><strong>${norma === 'iec' ? 'IEC' : 'NEC Art. 430'}</strong></div>
+          <div class="dato-box"><small>Sistema</small><strong>${textoSistema}</strong></div>
+          <div class="dato-box"><small>Tensión</small><strong>${voltaje} V</strong></div>
+          <div class="dato-box"><small>In calculada</small><strong>${InCalculada.toFixed(2)} A</strong></div>
+          <div class="dato-box"><small>In usada para equipos</small><strong>${InMotor.toFixed(2)} A ${tienePlaca ? '(placa)' : '(estimada)'}</strong></div>
+          <div class="dato-box"><small>Arranque</small><strong>${textoArranque(arranque)}</strong></div>
+          <div class="dato-box"><small>Ia estimada</small><strong>${corrienteArranque.toFixed(1)} A · ${relacionArranque.toFixed(1)}×In</strong></div>
+        </div>
+      `;
+
+      const mecanica = datosMecanicosMotor();
+      const tipoCargaMotor = document.getElementById('tipoCargaMotor')?.value || 'bomba';
+      const arranquesHora = getNumber('arranquesHora');
+      const tensionBobina = document.getElementById('tensionBobina')?.value || '220VAC';
+      const coordinacionIEC = document.getElementById('coordinacionIEC')?.value || 'tipo1';
+      resultadoHTML += `<div class="resultado-resumen"><h3>Resumen de selección</h3><div class="resultado-grid">
+        <div class="resultado-chip"><small>Corriente del motor</small><strong>${InMotor.toFixed(2)} A</strong></div>
+        <div class="resultado-chip"><small>Corriente de arranque</small><strong>${corrienteArranque.toFixed(1)} A</strong></div>
+        <div class="resultado-chip"><small>Método</small><strong>${textoArranque(arranque)}</strong></div>
+        <div class="resultado-chip"><small>Bobina de mando</small><strong>${tensionBobina}</strong></div>
+        ${mecanica ? `<div class="resultado-chip"><small>Velocidad síncrona</small><strong>${mecanica.ns.toFixed(0)} rpm</strong></div><div class="resultado-chip"><small>Deslizamiento</small><strong>${mecanica.slip.toFixed(2)} %</strong></div>` : ''}
+      </div></div>`;
+      if (Number.isFinite(arranquesHora) && arranquesHora > 0) resultadoHTML += `<div class="aviso-tecnico"><strong>Servicio de arranque:</strong> ${arranquesHora} arranques/h · carga ${tipoCargaMotor}. Verifica capacidad térmica y frecuencia de maniobra del contactor/arrancador con el fabricante.</div>`;
+      if (norma === 'iec') resultadoHTML += `<div class="aviso-tecnico"><strong>Coordinación IEC seleccionada:</strong> ${coordinacionIEC === 'tipo2' ? 'Tipo 2' : 'Tipo 1'}. La combinación final interruptor + contactor + relé debe validarse con tablas ensayadas del fabricante.</div>`;
+
+      if (!tienePlaca) {
+        resultadoHTML += `<div class="aviso-tecnico"><strong>Mejora de precisión:</strong> no se ingresó corriente de placa. La app usa la corriente calculada para orientar contactor y sobrecarga; para selección final conviene usar la FLA real de placa.</div>`;
+      }
+
+      if (norma === 'iec') {
+        resultadoHTML += `
+          <div class="proteccion">
+            <img src="imagenes/itm.png" alt="Protección contra cortocircuito" />
+            <div><strong>Protección de cortocircuito:</strong> ${proteccionIEC.equipo}<br>
+              <strong>${proteccionIEC.curva}</strong>
+              <div class="etiqueta-itm">Base de cálculo: ${calibreBaseIEC} A (≥ In). ${proteccionIEC.detalle}</div>
+              <div class="etiqueta-itm">${poderCorte}</div>
+              ${bloqueComercial('ITM / guardamotor orientativo', itmIEC.texto, `Recomendación didáctica: valor comercial inmediato superior. ${itmIEC.detalle}`)}
+              ${bloqueProteccionIndustrial(proteccionIndustrial, corrienteArranque, iccDisponible)}
+            </div>
+          </div>
+        `;
+
+        if (arranque === 'estrella') {
+          const ieLineaDelta = InMotor * 0.58;
+          const ieEstrella = InMotor * 0.33;
+          const posicionRele = document.getElementById('posicionRele')?.value || 'delta';
+          const ajusteRele = posicionRele === 'delta' ? InMotor * 0.58 : InMotor;
+          resultadoHTML += `
+            <div class="proteccion">
+              <img src="imagenes/contactor.png" alt="Contactores" />
+              <div><strong>Contactores IEC 60947-4-1 · categoría AC-3:</strong><br>
+                Línea y Delta (Δ): Ie mínima ≈ ${ieLineaDelta.toFixed(1)} A cada uno<br>
+                Estrella (Y): Ie mínima ≈ ${ieEstrella.toFixed(1)} A
+                <div class="etiqueta-itm">Selecciona un calibre AC-3 igual o superior a la corriente requerida y valida la coordinación del fabricante.</div>
+                ${(() => { const cd = recomendarContactorAC3(ieLineaDelta); const cy = recomendarContactorAC3(ieEstrella); return bloqueComercial('Contactor Línea / Δ', cd.texto, 'Usar el primer calibre AC-3 igual o superior a la corriente de línea y delta.') + bloqueComercial('Contactor Estrella', cy.texto, 'Usar el primer calibre AC-3 igual o superior a la corriente de estrella.'); })()}
+              </div>
+            </div>
+            <div class="proteccion">
+              <img src="imagenes/rele.png" alt="Relé térmico" />
+              <div><strong>Relé de sobrecarga:</strong> punto de ajuste ≈ ${ajusteRele.toFixed(1)} A<br>
+                <strong>${claseRele}</strong>
+                <div class="etiqueta-itm">${posicionRele === 'delta' ? 'Relé dentro del delta: circula aproximadamente 0.58 × In.' : 'Relé en línea: circula la corriente total del motor.'}</div>
+                ${(() => { const rr = recomendarReleTermico(ajusteRele); return bloqueComercial('Rango del relé térmico', rr.texto, `El rango comercial debe contener ${ajusteRele.toFixed(1)} A. ${rr.detalle}`); })()}
+              </div>
+            </div>
+          `;
+        } else if (arranque === 'vfd') {
+          resultadoHTML += `
+            <div class="proteccion">
+              <img src="imagenes/contactor.png" alt="Contactor" />
+              <div><strong>Contactor con VFD:</strong> seguir el esquema del fabricante del variador.
+                <div class="etiqueta-itm">Si el diseño contempla contactor de entrada o bypass, su Ie debe ser compatible con la corriente nominal del sistema y la maniobra prevista.</div>
+                ${bloqueComercial('Contactor orientativo', contactorGeneral.texto, 'Referencia didáctica para maniobra general del motor; validar siempre con el esquema del VFD.')}
+              </div>
+            </div>
+            <div class="proteccion">
+              <img src="imagenes/rele.png" alt="Sobrecarga" />
+              <div><strong>Protección de sobrecarga:</strong> parametrizar en el VFD con los datos reales de placa del motor.
+                <div class="etiqueta-itm">Usa la corriente nominal real del motor y las recomendaciones del fabricante del variador.</div>
+                ${bloqueComercial('Rango orientativo de relé / ajuste', releGeneral.texto, 'Si se usa una protección externa complementaria, el rango elegido debe contener la corriente nominal del motor.')}
+              </div>
+            </div>
+          `;
+        } else {
+          resultadoHTML += `
+            <div class="proteccion">
+              <img src="imagenes/contactor.png" alt="Contactor" />
+              <div><strong>Contactor IEC 60947-4-1:</strong> categoría AC-3 · Ie mínima ≥ ${InMotor.toFixed(1)} A
+                <div class="etiqueta-itm">Selecciona el calibre comercial AC-3 a ${voltaje} V o superior y verifica la potencia de motor del fabricante.</div>
+                ${bloqueComercial('Contactor sugerido', contactorGeneral.texto, contactorGeneral.detalle)}
+              </div>
+            </div>
+            <div class="proteccion">
+              <img src="imagenes/rele.png" alt="Relé térmico" />
+              <div><strong>Relé de sobrecarga:</strong> punto de ajuste inicial ≈ ${InMotor.toFixed(1)} A<br>
+                <strong>${claseRele}</strong>
+                <div class="etiqueta-itm">Selecciona un rango comercial que contenga la corriente de ajuste y luego afina el seteo con la placa del motor.</div>
+                ${bloqueComercial('Rango del relé térmico', releGeneral.texto, releGeneral.detalle)}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        const flcNec = Number.isFinite(flcNecRaw) && flcNecRaw > 0 ? flcNecRaw : InCalculada;
+        const serviceFactor = getNumber('serviceFactor');
+        const tempRise = document.getElementById('tempRiseMotor')?.value || 'unknown';
+        const usa125 = (Number.isFinite(serviceFactor) && serviceFactor >= 1.15) || tempRise === '40';
+        const overloadPct = usa125 ? 1.25 : 1.15;
+        const overloadBase = tienePlaca ? InMotor : InCalculada;
+        const overloadMax = overloadBase * overloadPct;
+        const breakerMax = flcNec * 2.50;
+        const flcIngresada = Number.isFinite(flcNecRaw) && flcNecRaw > 0;
+
+        resultadoHTML += `
+          <div class="proteccion">
+            <img src="imagenes/itm.png" alt="Breaker NEC" />
+            <div><strong>NEC 430.52 · interruptor de tiempo inverso:</strong><br>
+              Límite de tabla para el caso mostrado: hasta ${breakerMax.toFixed(1)} A (250% de FLC ${flcNec.toFixed(1)} A).
+              <div class="etiqueta-itm">Selecciona el dispositivo que permita el arranque y coordine con el conductor, el equipo y las reglas aplicables de NEC.</div>
+              <div class="etiqueta-itm">${poderCorte}</div>
+              ${bloqueComercial('ITM / breaker orientativo', itmNEC.texto, 'Como guía didáctica, inicia con el valor comercial inmediato superior y verifica si el arranque exige ajuste adicional conforme NEC 430.52.')}
+            </div>
+          </div>
+          <div class="proteccion">
+            <img src="imagenes/contactor.png" alt="Controlador motor" />
+            <div><strong>Controlador / contactor:</strong> debe estar listado y dimensionado para la potencia, tensión y FLA del motor.
+              <div class="etiqueta-itm">Si se usa un contactor IEC como referencia, debe ser AC-3 con Ie suficiente para la corriente del motor.</div>
+              ${bloqueComercial('Contactor sugerido', contactorGeneral.texto, contactorGeneral.detalle)}
+            </div>
+          </div>
+          <div class="proteccion">
+            <img src="imagenes/rele.png" alt="Sobrecarga NEC" />
+            <div><strong>NEC 430.32 · sobrecarga:</strong> máximo inicial ${Math.round(overloadPct*100)}% de corriente de placa = ${overloadMax.toFixed(1)} A
+              <div class="etiqueta-itm">${usa125 ? 'Aplica 125% porque SF ≥ 1.15 o elevación de temperatura ≤ 40 °C.' : 'Aplica 115% al no cumplirse/indicarse las condiciones para 125%.'} Ajusta finalmente con la placa y las instrucciones del equipo.</div>
+              ${(() => { const rr = recomendarReleTermico(overloadBase); return bloqueComercial('Rango del relé térmico', rr.texto, `El rango seleccionado debe contener la corriente de placa del motor (${overloadBase.toFixed(1)} A).`); })()}
+            </div>
+          </div>
+        `;
+        if (!flcIngresada) {
+          resultadoHTML += `<div class="aviso-tecnico"><strong>NEC:</strong> no ingresaste la FLC de tabla. Para 430.52 la app está usando provisionalmente la corriente calculada. Para un resultado normativo, introduce la FLC correspondiente de las tablas NEC 430.248/249/250.</div>`;
+        }
+      }
+
+      if (arranque === '0.7') {
+        resultadoHTML += `<div class="aviso-tecnico"><strong>Arrancador suave:</strong> usa Ia/In para analizar el arranque y la coordinación de disparo. Para maniobra y sobrecarga, toma como referencia la corriente nominal real del motor y el esquema del equipo.</div>`;
+      }
+
+      resultadoHTML += `
+        <div class="aviso-tecnico">
+          <strong>Coordinación obligatoria:</strong> valida la selección final con la placa del motor, la curva tiempo-corriente, la Icc disponible, el poder de corte, la categoría de empleo y las tablas de coordinación del fabricante.
+        </div>
+
+        <div class="botones oculto-impresion">
+          <button type="button" class="modo-btn info-btn" onclick="togglePanelProtecciones()" id="btnInfoProtecciones">📘 Criterios técnicos usados</button>
+        </div>
+        <div id="infoCalculoProtecciones" class="info-calculo" style="display:none;">
+          <strong>1. Corriente del motor</strong><br>
+          Corriente estimada: P/(√3·V·η·cosφ) en trifásico o P/(V·η·cosφ) en monofásico. Si se ingresa corriente de placa, esa corriente tiene prioridad para equipos de maniobra/sobrecarga.<br><br>
+
+          <strong>2. IEC · protección de cortocircuito</strong><br>
+          IEC 60947-2: la curva o ajuste magnético debe tolerar Ia durante el tiempo de arranque y mantener protección frente al cortocircuito. Icu/Icn debe ser compatible con la Icc disponible.<br><br>
+
+          <strong>3. IEC · contactores</strong><br>
+          IEC 60947-4-1: motor jaula de ardilla en servicio normal → categoría AC-3. En estrella-triángulo, línea/delta ≈ 0.58×In y estrella ≈ 0.33×In como base de selección, siempre validando coordinación del fabricante.<br><br>
+
+          <strong>4. Relé de sobrecarga</strong><br>
+          Se parte de la corriente real de placa. En estrella-triángulo, un relé dentro del delta ve ≈0.58×In; colocado en línea ve ≈1.00×In. La clase 10/20/30 debe verificarse con el tiempo real de arranque.<br><br>
+
+          <strong>5. Motores de mayor corriente · MPCB/MCCB</strong><br>
+          Cuando la corriente supera el rango práctico de un guardamotor compacto, la app propone un MPCB de alto calibre o un MCCB. Ir/L representa el ajuste de larga duración/sobrecarga cuando la unidad lo integra; Ii/Im representa el disparo instantáneo por cortocircuito y debe coordinarse por encima de la corriente de arranque sin comprometer la protección frente a falla. Si se usa MCCB magnético solamente, la sobrecarga queda a cargo de un relé térmico/electrónico externo.<br><br>
+
+          <strong>6. NEC</strong><br>
+          430.52: para el caso típico mostrado, el interruptor de tiempo inverso tiene un máximo de tabla de 250% de la FLC. 430.32: la sobrecarga se basa en corriente de placa y usa 125% o 115% según SF/elevación térmica.<br><br>
+
+          <em>La app entrega una selección técnica inicial y ahora añade referencias comerciales orientativas para facilitar la lectura del estudiante. La referencia final depende del fabricante y de su combinación ensayada.</em>
+        </div>
+      `;
+
+      const out = document.getElementById('resultadoProtecciones');
+      out.innerHTML = resultadoHTML;
+      out.style.display = 'block';
+      saveFormData();
+      saveHistoryEntry({
+        tipo: 'protecciones',
+        titulo: 'Protecciones de motor',
+        fecha: nowStamp(),
+        estado: 'ok',
+        estadoTexto: norma.toUpperCase(),
+        resumen: `${potenciaKw.toFixed(2)} kW · ${textoSistema} · ${voltaje} V · In ${InMotor.toFixed(2)} A · ${textoArranque(arranque)}`,
+        data: {
+          potenciaHp: document.getElementById('potenciaHp').value,
+          potenciaKw: document.getElementById('potenciaKw').value,
+          normaMotor: document.getElementById('normaMotor').value,
+          sistemaMotor: document.getElementById('sistemaMotor').value,
+          voltaje: document.getElementById('voltaje').value,
+          eficiencia: document.getElementById('eficiencia').value,
+          fp: document.getElementById('fp').value,
+          arranque: document.getElementById('arranque').value,
+          corrientePlaca: document.getElementById('corrientePlaca').value,
+          flcNec: document.getElementById('flcNec').value,
+          relacionArranque: document.getElementById('relacionArranque').value,
+          tiempoArranque: document.getElementById('tiempoArranque').value,
+          iccDisponible: document.getElementById('iccDisponible').value,
+          posicionRele: document.getElementById('posicionRele').value,
+          serviceFactor: document.getElementById('serviceFactor').value,
+          tempRiseMotor: document.getElementById('tempRiseMotor').value
+        }
+      });
+    }
+
+    function textoArranque(arranque) {
+      if (arranque === 'estrella') return 'Estrella-triángulo';
+      if (arranque === '0.7') return 'Arrancador suave';
+      if (arranque === 'vfd') return 'Variador (VFD)';
+      return 'Directo';
+    }
+
+    function togglePanelProtecciones() {
+      const info = document.getElementById("infoCalculoProtecciones");
+      const btn = document.getElementById("btnInfoProtecciones");
+      if (!info || !btn) return;
+      const open = info.style.display !== "block";
+      info.style.display = open ? "block" : "none";
+      btn.classList.toggle("activo-info", open);
+    }
+
+    function findAWGforMm2(mm2) {
+      let mejor = null;
+      let mejorDiff = Infinity;
+      for (const item of awgTable) {
+        const diff = Math.abs(item.mm2 - mm2);
+        if (diff < mejorDiff) {
+          mejorDiff = diff;
+          mejor = item;
+        }
+      }
+      return mejor ? mejor.awg : "—";
+    }
+
+    function mostrarPanelConductor(panel) {
+      const infoCalc = document.getElementById("infoConductor");
+      const infoAWG = document.getElementById("infoEquivalenciaAWG");
+      const btnCalc = document.getElementById("btnInfoConductor");
+      const btnAWG = document.getElementById("btnEquivAWG");
+      if (!infoCalc || !infoAWG || !btnCalc || !btnAWG) return;
+
+      if (panel === "calculo") {
+        const open = infoCalc.style.display !== "block";
+        infoCalc.style.display = open ? "block" : "none";
+        infoAWG.style.display = "none";
+        btnCalc.classList.toggle("activo-info", open);
+        btnAWG.classList.remove("activo-info");
+      } else {
+        const open = infoAWG.style.display !== "block";
+        infoAWG.style.display = open ? "block" : "none";
+        infoCalc.style.display = "none";
+        btnAWG.classList.toggle("activo-info", open);
+        btnCalc.classList.remove("activo-info");
+      }
+    }
+
+    function validarConductores() {
+      clearErrors(['corrienteCond', 'longitud', 'caidaMax']);
+      let ok = true;
+
+      const In = getNumber('corrienteCond');
+      const longitud = getNumber('longitud');
+      const caidaMax = getNumber('caidaMax');
+
+      if (isNaN(In) || In <= 0) {
+        setError('corrienteCond', 'Ingresa una corriente mayor a 0 A.');
+        ok = false;
+      }
+      if (isNaN(longitud) || longitud <= 0) {
+        setError('longitud', 'Ingresa una longitud mayor a 0 m.');
+        ok = false;
+      }
+      if (isNaN(caidaMax) || caidaMax <= 0 || caidaMax > 10) {
+        setError('caidaMax', 'Ingresa un porcentaje válido entre 0.1% y 10%.');
+        ok = false;
+      }
+      if (longitud > 1500) {
+        setError('longitud', 'La longitud parece muy alta. Verifica si estás ingresando metros de ida.');
+        ok = false;
+      }
+
+      return ok;
+    }
+
+    function calcularConductor() {
+      if (!validarConductores()) return;
+
+      const sistema = document.getElementById("sistemaConductor").value;
+      const tipoCarga = document.getElementById("tipoCarga").value;
+      const In = getNumber("corrienteCond");
+      const factor = getNumber("factorDiseno");
+      const voltaje = getNumber("voltajeCond");
+      const longitud = getNumber("longitud");
+      const material = document.getElementById("material").value;
+      const caidaMax = getNumber("caidaMax");
+      const aislamiento = document.getElementById("aislamiento").value;
+      const tempAmbiente = document.getElementById("tempAmbiente").value;
+      const metodoInstalacion = document.getElementById("metodoInstalacion").value;
+      const conductoresCargados = document.getElementById("conductoresCargados").value;
+
+      const Id = In * factor;
+      const rho = material === "cu" ? RHO_CU : RHO_AL;
+      const resultadoDiv = document.getElementById("resultadoConductor");
+      const tempFactor = getTempFactor(aislamiento, tempAmbiente);
+      const groupingFactor = getGroupingFactor(conductoresCargados);
+      const installFactor = getInstallFactor(metodoInstalacion);
+
+      let seccionSeleccionadaMM = null;
+      let caidaSeleccionada = null;
+      let ampacidadSeleccionada = null;
+      const detalles = [];
+
+      for (let s of seccionesMM) {
+        const dV = sistema === "3f"
+          ? Math.sqrt(3) * Id * rho * longitud / s
+          : 2 * Id * rho * longitud / s;
+
+        const dVporc = dV / voltaje * 100;
+        const Ibase = getAmpacidadBase(material, aislamiento, s);
+        const Icorr = Ibase ? Ibase * tempFactor * groupingFactor * installFactor : null;
+
+        detalles.push({ s, dVporc, Ibase, Icorr });
+
+        if (Icorr && Id <= Icorr && dVporc <= caidaMax && seccionSeleccionadaMM === null) {
+          seccionSeleccionadaMM = s;
+          caidaSeleccionada = dVporc;
+          ampacidadSeleccionada = Icorr;
+        }
+      }
+
+      let cumpleTotal = true;
+      if (seccionSeleccionadaMM === null) {
+        cumpleTotal = false;
+        const fallback = detalles.filter(d => d.Icorr).sort((a, b) => a.s - b.s).slice(-1)[0] || detalles[detalles.length - 1];
+        seccionSeleccionadaMM = fallback.s;
+        caidaSeleccionada = fallback.dVporc;
+        ampacidadSeleccionada = fallback.Icorr;
+      }
+
+      const awgEquiv = findAWGforMm2(seccionSeleccionadaMM);
+      const textoMaterial = material === "cu" ? "Cobre" : "Aluminio";
+      const textoSistema = sistema === "3f" ? "Trifásico" : "Monofásico";
+      const textoCarga = tipoCarga === "motor" ? "Motor trifásico" :
+                         tipoCarga === "iluminacion" ? "Iluminación" :
+                         tipoCarga === "tomas" ? "Tomas / uso general" :
+                         "Otra carga / personalizado";
+      const textoAislamiento = aislamiento === 'pvc' ? 'PVC / 70 °C' : 'XLPE / 90 °C';
+      const textoInstalacion = metodoInstalacion === 'tuberia' ? 'Tubería / ducto' : metodoInstalacion === 'bandeja' ? 'Bandeja perforada' : 'Al aire libre';
+
+      const detalleCalculosHtml = detalles.map(det => {
+        const clase = det.s === seccionSeleccionadaMM ? ' class="recomendado"' : '';
+        return `<tr${clase}><td>${det.s}</td><td>${det.Ibase ? det.Ibase.toFixed(1) : 'n/d'}</td><td>${det.Icorr ? det.Icorr.toFixed(1) : 'n/d'}</td><td>${det.dVporc.toFixed(2)}%</td></tr>`;
+      }).join("");
+
+      const estado = cumpleTotal
+        ? `<span class="estado-pill ok">✔ Cumple con ampacidad corregida y caída</span>`
+        : `<span class="estado-pill warn">⚠ Requiere revisión avanzada</span>`;
+
+      const advertencias = [];
+      if (Number(tempAmbiente) >= 45) advertencias.push('Temperatura ambiente alta: la ampacidad corregida baja de forma importante.');
+      if (Number(conductoresCargados) >= 4) advertencias.push('Hay agrupamiento: conviene revisar tablas normativas exactas del proyecto.');
+      if (caidaSeleccionada > caidaMax) advertencias.push('Ni la sección máxima de la tabla cumple la caída de tensión objetivo.');
+      if (material === 'al') advertencias.push('Para aluminio revisa conectores, terminales y compatibilidad de borneras.');
+
+      let html = `
+        <div class="resultado-cabecera">
+          <div class="resultado-titulo">Ficha técnica · Selección de conductor</div>
+          <div class="resultado-fecha">${nowStamp()}</div>
+        </div>
+
+        <div style="margin-bottom:10px;">${estado}</div>
+
+        <div class="resumen-grid">
+          <div class="dato-box"><small>Sistema</small><strong>${textoSistema}</strong></div>
+          <div class="dato-box"><small>Tensión</small><strong>${voltaje} V</strong></div>
+          <div class="dato-box"><small>Corriente nominal In</small><strong>${In.toFixed(2)} A</strong></div>
+          <div class="dato-box"><small>Corriente de diseño Id</small><strong>${Id.toFixed(2)} A</strong></div>
+          <div class="dato-box"><small>Sección recomendada</small><strong>${seccionSeleccionadaMM} mm²</strong></div>
+          <div class="dato-box"><small>Equivalencia AWG</small><strong>${awgEquiv} AWG aprox.</strong></div>
+          <div class="dato-box"><small>Ampacidad corregida</small><strong>${ampacidadSeleccionada ? ampacidadSeleccionada.toFixed(1) : 'n/d'} A</strong></div>
+          <div class="dato-box"><small>Caída estimada</small><strong>${caidaSeleccionada.toFixed(2)} %</strong></div>
+        </div>
+
+        <strong>Tipo de carga:</strong> ${textoCarga}<br>
+        <strong>Longitud del circuito:</strong> ${longitud.toFixed(1)} m<br>
+        <strong>Material:</strong> ${textoMaterial}<br>
+        <strong>Aislamiento:</strong> ${textoAislamiento}<br>
+        <strong>Temperatura ambiente:</strong> ${tempAmbiente} °C<br>
+        <strong>Método de instalación:</strong> ${textoInstalacion}<br>
+        <strong>Conductores cargados:</strong> ${conductoresCargados === '4' ? '4 a 6' : conductoresCargados === '7' ? '7 a 9' : conductoresCargados === '10' ? '10 a 20' : conductoresCargados}<br>
+        <strong>Factores aplicados:</strong> temperatura ${tempFactor.toFixed(2)} × agrupamiento ${groupingFactor.toFixed(2)} × instalación ${installFactor.toFixed(2)}<br>
+        <strong>Caída máxima permitida:</strong> ${caidaMax.toFixed(2)} %<br><br>
+
+        <strong>Detalle de evaluación por sección:</strong>
+        <table>
+          <thead>
+            <tr><th>mm²</th><th>I base</th><th>I corregida</th><th>ΔV %</th></tr>
+          </thead>
+          <tbody>${detalleCalculosHtml}</tbody>
+        </table>
+
+        <div class="aviso-tecnico">
+          Esta versión ya considera <strong>temperatura ambiente, aislamiento, agrupamiento y método de instalación</strong> con factores aproximados de diseño preliminar. Para el cálculo final, valida con la norma aplicable, tablas exactas y fabricante.
+          ${advertencias.length ? '<ul>' + advertencias.map(a => `<li>${a}</li>`).join('') + '</ul>' : ''}
+        </div>
+
+        <div class="botones oculto-impresion">
+          <button type="button" class="modo-btn info-btn" id="btnInfoConductor" onclick="mostrarPanelConductor('calculo')">📘 ¿De dónde sale este cálculo?</button>
+          <button type="button" class="modo-btn info-btn" id="btnEquivAWG" onclick="mostrarPanelConductor('awg')">🔁 Equivalencia en AWG</button>
+          <button type="button" class="modo-btn" onclick="toggleHistorial(true)">📚 Ver historial</button>
+        </div>
+
+        <div id="infoConductor" class="info-calculo" style="display:none;">
+          <strong>1. Corriente nominal vs. corriente de diseño</strong><br>
+          • In: corriente nominal del circuito.<br>
+          • Id: In × factor de diseño.<br><br>
+
+          <strong>2. Fórmula de caída de tensión</strong><br>
+          <u>Trifásico:</u> ΔV ≈ √3 · Id · ρ · L / S<br>
+          <u>Monofásico:</u> ΔV ≈ 2 · Id · ρ · L / S<br><br>
+
+          <strong>3. Ampacidad corregida</strong><br>
+          • I corregida ≈ I base × factor de temperatura × factor de agrupamiento × factor de instalación.<br><br>
+
+          <strong>4. Criterio de selección</strong><br>
+          • Se elige la primera sección comercial que cumple ampacidad corregida y caída máxima.<br><br>
+
+          <em>Importante:</em> Es una ayuda de diseño preliminar; revisa tablas exactas de tu código eléctrico.
+        </div>
+
+        <div id="infoEquivalenciaAWG" class="info-calculo" style="display:none;">
+          <strong>Equivalencias aproximadas AWG ↔ mm²</strong>
+          <table>
+            <thead>
+              <tr><th>AWG</th><th>mm² aprox.</th></tr>
+            </thead>
+            <tbody>
+              ${awgTable.map(item => `<tr><td>${item.awg}</td><td>${item.mm2.toFixed(2)}</td></tr>`).join("")}
+            </tbody>
+          </table>
+          <p style="font-size:0.8em; margin-top:8px;">
+            El calibre recomendado para este cálculo fue: <strong>${seccionSeleccionadaMM} mm² ≈ ${awgEquiv} AWG</strong>.
+          </p>
+        </div>
+      `;
+
+      resultadoDiv.innerHTML = html;
+      resultadoDiv.style.display = "block";
+      saveFormData();
+      saveHistoryEntry({
+        tipo: 'conductores',
+        titulo: 'Conductor calculado',
+        fecha: nowStamp(),
+        estado: cumpleTotal ? 'ok' : 'warn',
+        estadoTexto: cumpleTotal ? 'Cumple' : 'Revisar',
+        resumen: `${textoSistema} · ${textoMaterial} · ${seccionSeleccionadaMM} mm² · ${Id.toFixed(1)} A diseño · ΔV ${caidaSeleccionada.toFixed(2)}%`,
+        data: {
+          sistemaConductor: sistema,
+          tipoCarga,
+          corrienteCond: document.getElementById('corrienteCond').value,
+          factorDiseno: document.getElementById('factorDiseno').value,
+          voltajeCond: document.getElementById('voltajeCond').value,
+          longitud: document.getElementById('longitud').value,
+          material,
+          caidaMax: document.getElementById('caidaMax').value,
+          aislamiento,
+          tempAmbiente,
+          metodoInstalacion,
+          conductoresCargados
+        }
+      });
+    }
+
+
+    const KVAR_COMERCIALES = [1,1.5,2,2.5,3,4,5,6,7.5,8,9,10,11,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,37.5,40,42.5,45,50,52.5,55,60,65,70,75,80,85,90,100,120,140,150,160,180,200,225,250,300,350];
+
+    function actualizarModoPF(){
+      const motor=document.getElementById('modoPF')?.value==='motor';
+      document.getElementById('campoPotMotorPF').style.display=motor?'block':'none';
+      document.getElementById('campoEficienciaPF').style.display=motor?'block':'none';
+      document.getElementById('campoPotGeneralPF').style.display=motor?'none':'block';
+      document.getElementById('campoI0PF').style.display=motor?'block':'none';
+      if(document.getElementById('tipoBancoPF')) document.getElementById('tipoBancoPF').value=motor?'fijo':'automatico';
+    }
+
+    function kvarComercial(q, motorIndividual){
+      if(motorIndividual){
+        const posibles=KVAR_COMERCIALES.filter(v=>v<=q+1e-9);
+        return posibles.length?posibles[posibles.length-1]:KVAR_COMERCIALES[0];
+      }
+      return KVAR_COMERCIALES.reduce((best,v)=>Math.abs(v-q)<Math.abs(best-q)?v:best,KVAR_COMERCIALES[0]);
+    }
+
+    function pasosBanco(total){
+      const base=[2.5,5,10,12.5,15,20,25,30,40,50];
+      let restante=total, pasos=[];
+      for(let i=0;i<6 && restante>0.75;i++){
+        const objetivo=restante/(6-i);
+        const paso=base.reduce((b,v)=>Math.abs(v-objetivo)<Math.abs(b-objetivo)?v:b,base[0]);
+        pasos.push(paso); restante=Math.max(0,restante-paso);
+      }
+      const suma=pasos.reduce((a,b)=>a+b,0);
+      if(suma<total*0.85) pasos.push(Math.max(2.5, kvarComercial(total-suma,false)));
+      return pasos;
+    }
+
+    function calcularFactorPotencia(){
+      const modo=document.getElementById('modoPF').value;
+      const motor=modo==='motor';
+      const eta=getNumber('eficienciaPF');
+      const potOut=getNumber('potMotorPF');
+      const potGen=getNumber('potActivaPF');
+      const sistema=document.getElementById('sistemaPF').value;
+      const V=getNumber('voltajePF');
+      const f=getNumber('frecuenciaPF');
+      const fp1=getNumber('fpActualPF');
+      const fp2=getNumber('fpObjetivoPF');
+      const I0=getNumber('corrienteVacioPF');
+      const harmonicos=document.getElementById('armonicosPF').value==='si';
+      const conexion=document.getElementById('conexionPF').value;
+      const tipoBanco=document.getElementById('tipoBancoPF').value;
+      const out=document.getElementById('resultadoFactor');
+      if(!(V>0&&f>0&&fp1>0&&fp1<1&&fp2>fp1&&fp2<1)){out.innerHTML='<div class="pf-status warn">Revisa tensión, frecuencia y factores de potencia. El FP objetivo debe ser mayor que el actual y menor que 1.</div>';out.style.display='block';return;}
+      let P;
+      if(motor){ if(!(potOut>0&&eta>0&&eta<=1)){out.innerHTML='<div class="pf-status warn">Ingresa potencia del motor y eficiencia válidas.</div>';out.style.display='block';return;} P=potOut/eta; }
+      else { if(!(potGen>0)){out.innerHTML='<div class="pf-status warn">Ingresa la potencia activa de la instalación.</div>';out.style.display='block';return;} P=potGen; }
+      const phi1=Math.acos(fp1), phi2=Math.acos(fp2);
+      const Q1=P*Math.tan(phi1), Q2=P*Math.tan(phi2), Qc=Math.max(0,Q1-Q2);
+      const kvarSel=kvarComercial(Qc,motor);
+      const fpReal=Math.min(.999999, P/Math.sqrt(P*P+Math.pow(Math.max(0,Q1-kvarSel),2)));
+      const raiz=sistema==='3f'?Math.sqrt(3):1;
+      const Iantes=P*1000/(raiz*V*fp1), Idespues=P*1000/(raiz*V*fpReal);
+      const Ic=sistema==='3f'?kvarSel*1000/(Math.sqrt(3)*V):kvarSel*1000/V;
+      const omega=2*Math.PI*f;
+      let C;
+      if(sistema==='1f') C=kvarSel*1000/(omega*V*V);
+      else C=conexion==='delta'?kvarSel*1000/(3*omega*V*V):kvarSel*1000/(omega*V*V);
+      const Cuf=C*1e6;
+      const ahorro=(1-Idespues/Iantes)*100;
+      const S1=P/fp1, S2=P/fpReal;
+      const limite30=motor?0.30*potOut:null;
+      const limiteI0=(motor && I0>0 && sistema==='3f')?0.9*Math.sqrt(3)*V*I0/1000:null;
+      let alertas=[];
+      if(motor && kvarSel>limite30) alertas.push(`El banco comercial (${kvarSel} kVAr) supera el criterio conservador de 30% de la potencia del motor (${limite30.toFixed(1)} kVAr). Verifica corriente en vacío y fabricante.`);
+      if(limiteI0 && kvarSel>limiteI0) alertas.push(`Con I₀=${I0.toFixed(1)} A, 90% de la reactiva en vacío equivale aproximadamente a ${limiteI0.toFixed(1)} kVAr. El banco seleccionado lo supera.`);
+      if(harmonicos) alertas.push('Hay cargas no lineales: antes de usar condensadores convencionales revisa THD y posible banco detunado con reactores.');
+      if(fpReal>0.98) alertas.push('El FP resultante queda muy próximo a 1. Evita sobrecompensación, especialmente con carga variable.');
+      const pasos=tipoBanco==='automatico'?pasosBanco(kvarSel):[];
+      out.innerHTML=`
+        <div class="resultado-cabecera"><div class="resultado-titulo">Ficha técnica · Factor de potencia</div><div class="resultado-fecha">${nowStamp()}</div></div>
+        <div class="pf-status ${alertas.length?'warn':'ok'}"><strong>${alertas.length?'⚠ Revisión técnica requerida':'✔ Selección inicial coherente'}</strong>${alertas.length?'<ul>'+alertas.map(a=>`<li>${a}</li>`).join('')+'</ul>':'<br>El banco comercial propuesto se mantiene dentro de los criterios básicos evaluados.'}</div>
+        <div class="resumen-grid">
+          <div class="dato-box"><small>Potencia activa P</small><strong>${P.toFixed(2)} kW</strong></div>
+          <div class="dato-box"><small>FP actual → objetivo</small><strong>${fp1.toFixed(2)} → ${fp2.toFixed(2)}</strong></div>
+          <div class="dato-box"><small>Qc calculado</small><strong>${Qc.toFixed(2)} kVAr</strong></div>
+          <div class="dato-box"><small>Banco comercial</small><strong>${kvarSel} kVAr</strong></div>
+          <div class="dato-box"><small>FP estimado real</small><strong>${fpReal.toFixed(3)}</strong></div>
+          <div class="dato-box"><small>Corriente del banco</small><strong>${Ic.toFixed(1)} A</strong></div>
+          <div class="dato-box"><small>Capacitancia ${sistema==='3f'?'por fase':''}</small><strong>${Cuf.toFixed(1)} µF ${sistema==='3f'?conexion==='delta'?'Δ':'Y':''}</strong></div>
+          <div class="dato-box"><small>Corriente carga</small><strong>${Iantes.toFixed(1)} → ${Idespues.toFixed(1)} A</strong></div>
+        </div>
+        ${bloqueComercial('Banco de condensadores sugerido', `${kvarSel} kVAr · ${V} V · ${f} Hz`, motor?'Selección conservadora: se toma un valor comercial no mayor al Qc calculado para reducir riesgo de sobrecompensación.':'Valor comercial próximo al Qc calculado; en banco automático se recomienda repartirlo por pasos.')}
+        <div class="resultado-resumen"><h3>Efecto eléctrico estimado</h3><div class="resultado-grid">
+          <div class="resultado-chip"><small>Reactiva antes</small><strong>${Q1.toFixed(2)} kVAr</strong></div>
+          <div class="resultado-chip"><small>Reactiva después</small><strong>${Math.max(0,Q1-kvarSel).toFixed(2)} kVAr</strong></div>
+          <div class="resultado-chip"><small>Aparente antes</small><strong>${S1.toFixed(2)} kVA</strong></div>
+          <div class="resultado-chip"><small>Aparente después</small><strong>${S2.toFixed(2)} kVA</strong></div>
+          <div class="resultado-chip"><small>Reducción de corriente</small><strong>${ahorro.toFixed(1)} %</strong></div>
+          ${pasos.length?`<div class="resultado-chip"><small>Pasos sugeridos</small><strong>${pasos.join(' + ')} kVAr</strong></div>`:''}
+        </div></div>
+        <div class="aviso-tecnico"><strong>Criterio:</strong> Qc = P·(tanφ₁ − tanφ₂). En motores individuales, verifica especialmente corriente en vacío y riesgo de autoexcitación; con armónicos, usa evaluación de THD y considera reactores detunados.</div>`;
+      out.style.display='block';
+      saveFormData();
+      saveHistoryEntry({tipo:'factor',titulo:'Factor de potencia',fecha:nowStamp(),estado:alertas.length?'warn':'ok',estadoTexto:alertas.length?'Revisar':'Correcto',resumen:`${P.toFixed(1)} kW · FP ${fp1.toFixed(2)}→${fpReal.toFixed(2)} · banco ${kvarSel} kVAr`,data:{modoPF:modo,potMotorPF:document.getElementById('potMotorPF').value,eficienciaPF:document.getElementById('eficienciaPF').value,potActivaPF:document.getElementById('potActivaPF').value,sistemaPF:sistema,voltajePF:V,frecuenciaPF:f,fpActualPF:fp1,fpObjetivoPF:fp2,corrienteVacioPF:document.getElementById('corrienteVacioPF').value,armonicosPF:document.getElementById('armonicosPF').value,conexionPF:conexion,tipoBancoPF:tipoBanco}});
+    }
+
+    function limpiarFactorPotencia(){
+      document.getElementById('modoPF').value='motor';document.getElementById('potMotorPF').value='';document.getElementById('eficienciaPF').value='0.92';document.getElementById('potActivaPF').value='';document.getElementById('sistemaPF').value='3f';document.getElementById('voltajePF').value='380';document.getElementById('frecuenciaPF').value='60';document.getElementById('fpActualPF').value='0.80';document.getElementById('fpObjetivoPF').value='0.95';document.getElementById('corrienteVacioPF').value='';document.getElementById('armonicosPF').value='no';document.getElementById('conexionPF').value='delta';document.getElementById('tipoBancoPF').value='fijo';document.getElementById('resultadoFactor').style.display='none';document.getElementById('resultadoFactor').innerHTML='';actualizarModoPF();saveFormData();
+    }
+
+    function validarCaida() {
+      clearErrors(['corrienteCaida', 'longitudCaida', 'caidaObjetivo']);
+      let ok = true;
+      const corriente = getNumber('corrienteCaida');
+      const longitud = getNumber('longitudCaida');
+      const objetivo = getNumber('caidaObjetivo');
+
+      if (isNaN(corriente) || corriente <= 0) {
+        setError('corrienteCaida', 'Ingresa una corriente mayor a 0 A.');
+        ok = false;
+      }
+      if (isNaN(longitud) || longitud <= 0) {
+        setError('longitudCaida', 'Ingresa una longitud mayor a 0 m.');
+        ok = false;
+      }
+      if (isNaN(objetivo) || objetivo <= 0 || objetivo > 10) {
+        setError('caidaObjetivo', 'Ingresa un objetivo válido entre 0.1% y 10%.');
+        ok = false;
+      }
+      return ok;
+    }
+
+    function calcularCaida() {
+      if (!validarCaida()) return;
+
+      const sistema = document.getElementById('sistemaCaida').value;
+      const corriente = getNumber('corrienteCaida');
+      const voltaje = getNumber('voltajeCaida');
+      const longitud = getNumber('longitudCaida');
+      const material = document.getElementById('materialCaida').value;
+      const seccion = getNumber('seccionCaida');
+      const tempCond = getNumber('tempConductorCaida');
+      const objetivo = getNumber('caidaObjetivo');
+      const rhoT = getResistivity(material, tempCond);
+      const factor = sistema === '3f' ? Math.sqrt(3) : 2;
+      const dvVolt = factor * corriente * rhoT * longitud / seccion;
+      const dvPct = (dvVolt / voltaje) * 100;
+      const largoMax = ((objetivo / 100) * voltaje * seccion) / (factor * corriente * rhoT);
+      const seccionReq = (factor * corriente * rhoT * longitud) / ((objetivo / 100) * voltaje);
+      const sugerida = seccionesMM.find(s => s >= seccionReq) ?? seccionesMM[seccionesMM.length - 1];
+      const awgActual = findAWGforMm2(seccion);
+      const awgSugerido = findAWGforMm2(sugerida);
+      const cumple = dvPct <= objetivo;
+      const textoSistema = sistema === '3f' ? 'Trifásico' : 'Monofásico';
+      const textoMaterial = material === 'cu' ? 'Cobre' : 'Aluminio';
+      const estado = cumple
+        ? `<span class="estado-pill ok">✔ La sección evaluada cumple la caída objetivo</span>`
+        : `<span class="estado-pill warn">⚠ La sección evaluada no cumple la caída objetivo</span>`;
+
+      const html = `
+        <div class="resultado-cabecera">
+          <div class="resultado-titulo">Ficha técnica · Caída de tensión</div>
+          <div class="resultado-fecha">${nowStamp()}</div>
+        </div>
+
+        <div style="margin-bottom:10px;">${estado}</div>
+
+        <div class="resumen-grid">
+          <div class="dato-box"><small>Sistema</small><strong>${textoSistema}</strong></div>
+          <div class="dato-box"><small>Material</small><strong>${textoMaterial}</strong></div>
+          <div class="dato-box"><small>Sección evaluada</small><strong>${seccion} mm² · ${awgActual} AWG aprox.</strong></div>
+          <div class="dato-box"><small>Temperatura ρ</small><strong>${tempCond} °C</strong></div>
+          <div class="dato-box"><small>ΔV estimada</small><strong>${dvVolt.toFixed(2)} V</strong></div>
+          <div class="dato-box"><small>ΔV porcentual</small><strong>${dvPct.toFixed(2)} %</strong></div>
+          <div class="dato-box"><small>Longitud máxima para ${objetivo.toFixed(1)}%</small><strong>${largoMax.toFixed(1)} m</strong></div>
+          <div class="dato-box"><small>Sección mínima sugerida</small><strong>${sugerida} mm² · ${awgSugerido} AWG aprox.</strong></div>
+        </div>
+
+        <strong>Corriente evaluada:</strong> ${corriente.toFixed(2)} A<br>
+        <strong>Tensión del circuito:</strong> ${voltaje} V<br>
+        <strong>Longitud del circuito:</strong> ${longitud.toFixed(1)} m<br>
+        <strong>Resistividad corregida:</strong> ${rhoT.toFixed(5)} Ω·mm²/m<br>
+        <strong>Objetivo de caída:</strong> ${objetivo.toFixed(2)} %<br><br>
+
+        <div class="aviso-tecnico">
+          <strong>Criterio usado:</strong> ΔV ≈ ${(sistema === '3f' ? '√3' : '2')} × I × ρ(T) × L / S. Esta herramienta corrige la resistividad según temperatura estimada del conductor, lo que la vuelve útil para revisar alimentadores largos y comparar rápidamente secciones.
+          <ul>
+            <li>Si el circuito tiene armónicos, reactancia significativa o canalizaciones especiales, conviene revisar una memoria de cálculo más detallada.</li>
+            <li>La sección mínima sugerida se redondea a la siguiente sección comercial disponible en la tabla de la app.</li>
+          </ul>
+        </div>
+
+        <div class="botones oculto-impresion">
+          <button type="button" class="modo-btn" onclick="toggleHistorial(true)">📚 Ver historial</button>
+          <button type="button" class="modo-btn" onclick="togglePanelDatos(true)">🔐 Respaldo / datos</button>
+        </div>
+      `;
+
+      const out = document.getElementById('resultadoCaida');
+      out.innerHTML = html;
+      out.style.display = 'block';
+      saveFormData();
+      saveHistoryEntry({
+        tipo: 'caida',
+        titulo: 'Caída de tensión',
+        fecha: nowStamp(),
+        estado: cumple ? 'ok' : 'warn',
+        estadoTexto: cumple ? 'Cumple' : 'Ajustar',
+        resumen: `${textoSistema} · ${textoMaterial} · ${seccion} mm² · ΔV ${dvPct.toFixed(2)}% · sugerida ${sugerida} mm²`,
+        data: {
+          sistemaCaida: document.getElementById('sistemaCaida').value,
+          corrienteCaida: document.getElementById('corrienteCaida').value,
+          voltajeCaida: document.getElementById('voltajeCaida').value,
+          longitudCaida: document.getElementById('longitudCaida').value,
+          materialCaida: document.getElementById('materialCaida').value,
+          seccionCaida: document.getElementById('seccionCaida').value,
+          tempConductorCaida: document.getElementById('tempConductorCaida').value,
+          caidaObjetivo: document.getElementById('caidaObjetivo').value
+        }
+      });
+    }
+
+    function limpiarProtecciones() {
+      ['potenciaHp','potenciaKw','corrientePlaca','flcNec','iccDisponible'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('normaMotor').value = 'iec';
+      document.getElementById('tipoCargaMotor').value = 'bomba';
+      document.getElementById('sistemaMotor').value = '3f';
+      syncVoltageOptions();
+      document.getElementById('voltaje').value = '380';
+      document.getElementById('eficiencia').value = '0.90';
+      document.getElementById('fp').value = '0.85';
+      document.getElementById('arranque').value = '1';
+      document.getElementById('relacionArranque').value = '6';
+      document.getElementById('tiempoArranque').value = '5';
+      document.getElementById('posicionRele').value = 'delta';
+      document.getElementById('serviceFactor').value = '1.00';
+      document.getElementById('tempRiseMotor').value = 'unknown';
+      actualizarCamposNormaMotor();
+      actualizarParametrosArranque();
+      actualizarModoPF();
+      document.getElementById('resultadoProtecciones').style.display = 'none';
+      document.getElementById('resultadoProtecciones').innerHTML = '';
+      clearErrors(['potenciaHp','potenciaKw','eficiencia','fp','corrientePlaca','flcNec','relacionArranque','tiempoArranque']);
+      saveFormData();
+    }
+
+    function limpiarConductores() {
+      document.getElementById('sistemaConductor').value = '3f';
+      syncVoltageOptions();
+      document.getElementById('tipoCarga').value = 'motor';
+      document.getElementById('corrienteCond').value = '';
+      document.getElementById('factorDiseno').value = '1.25';
+      document.getElementById('voltajeCond').value = '380';
+      document.getElementById('longitud').value = '';
+      document.getElementById('material').value = 'cu';
+      document.getElementById('caidaMax').value = '3';
+      document.getElementById('aislamiento').value = 'pvc';
+      document.getElementById('tempAmbiente').value = '30';
+      document.getElementById('metodoInstalacion').value = 'tuberia';
+      document.getElementById('conductoresCargados').value = '3';
+      document.getElementById('resultadoConductor').style.display = 'none';
+      document.getElementById('resultadoConductor').innerHTML = '';
+      clearErrors(['corrienteCond','longitud','caidaMax']);
+      saveFormData();
+    }
+
+    function limpiarCaida() {
+      document.getElementById('sistemaCaida').value = '3f';
+      syncVoltageOptions();
+      document.getElementById('corrienteCaida').value = '';
+      document.getElementById('voltajeCaida').value = '380';
+      document.getElementById('longitudCaida').value = '';
+      document.getElementById('materialCaida').value = 'cu';
+      document.getElementById('seccionCaida').value = '70';
+      document.getElementById('tempConductorCaida').value = '70';
+      document.getElementById('caidaObjetivo').value = '3';
+      document.getElementById('resultadoCaida').style.display = 'none';
+      document.getElementById('resultadoCaida').innerHTML = '';
+      clearErrors(['corrienteCaida','longitudCaida','caidaObjetivo']);
+      saveFormData();
+    }
+
+    function imprimirSeccion(seccion) {
+      document.body.classList.remove('print-protecciones', 'print-conductores', 'print-caida', 'print-factor');
+      if (seccion === 'protecciones') document.body.classList.add('print-protecciones');
+      if (seccion === 'conductores') document.body.classList.add('print-conductores');
+      if (seccion === 'caida') document.body.classList.add('print-caida');
+      if (seccion === 'factor') document.body.classList.add('print-factor');
+      preparePrintReport(seccion);
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('print-protecciones', 'print-conductores', 'print-caida', 'print-factor');
+      }, 300);
+    }
+
+    window.addEventListener("load", () => {
+      if (!localStorage.getItem(STORAGE_SAVE_ENABLED_KEY)) {
+        localStorage.setItem(STORAGE_SAVE_ENABLED_KEY, '1');
+      }
+      aplicarModoGuardado();
+      loadFormData();
+      syncVoltageOptions();
+      actualizarFactorPorCarga();
+      actualizarCamposNormaMotor();
+      actualizarSugerenciasMotor();
+      setModoMotor(localStorage.getItem('modoMotorPASIR') || 'rapido');
+      const arranqueActual = document.getElementById('arranque')?.value;
+      if (arranqueActual === 'estrella') document.getElementById('campoPosicionRele').style.display = 'block';
+      toggleSocialLinks(isLocalSaveEnabled() && localStorage.getItem(STORAGE_SOCIAL_KEY) === '1');
+      renderHistorial();
+      updateDataStatus('');
+
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      if (isStandalone) {
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) installBtn.style.display = 'none';
+      }
+
+      document.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', saveFormData);
+        el.addEventListener('change', saveFormData);
+      });
+    });
+  </script>
+</body>
+</html>
