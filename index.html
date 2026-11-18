@@ -2,12 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Calculadora Industrial – Motor y Conductores</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora Industrial · PASIR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#12365b">
   <link rel="manifest" href="manifest.json">
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
+      navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
         .then(() => console.log('Service Worker registrado ✅'))
         .catch(error => console.log('Service Worker error:', error));
     }
@@ -17,9 +18,9 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      
       const installBtn = document.getElementById('installBtn');
-      if (isMobile && installBtn && !window.matchMedia('(display-mode: standalone)').matches) {
+      if (installBtn && !window.matchMedia('(display-mode: standalone)').matches) {
         installBtn.style.display = 'inline-flex';
       }
     });
@@ -950,10 +951,11 @@
     @media(max-width:560px){.pf-hero{align-items:flex-start}.pf-symbol{min-width:68px;height:68px;font-size:1.05rem}}
 
 </style>
+  <link rel="stylesheet" href="interfaz.css?v=3">
 </head>
-<body class="dark">
+<body class="light">
   <div class="contenedor">
-    <div class="app-shell">
+    <div class="app-shell" data-view="inicio">
       <div id="printHeader" class="print-only-report"></div>
       <div id="printFooter" class="print-only-report"></div>
       <div class="top-bar oculto-impresion">
@@ -989,22 +991,46 @@
         <img src="imagenes/logo.png" alt="Logo">
         <span>
           CALCULADORA INDUSTRIAL
-          <span class="subtitulo">Protecciones de motor · conductor · caída de tensión · PWA técnica</span>
+          <span class="subtitulo">PASIR · Herramientas eléctricas</span>
         </span>
       </h2>
 
       <div class="resumen-app oculto-impresion">
-        Herramienta de cálculo preliminar para trabajo técnico. Esta fase 3 agrega módulo independiente de caída de tensión, reporte de impresión más profesional y control local de respaldo / privacidad de datos.
+        Herramientas de cálculo preliminar para electricidad industrial. Selecciona una calculadora para comenzar.
       </div>
 
-      <div class="tabs oculto-impresion">
-        <button id="btnProtecciones" class="tab-btn activo" onclick="mostrarSeccion('protecciones')">⚙ Motor</button>
-        <button id="btnConductores" class="tab-btn" onclick="mostrarSeccion('conductores')">🔌 Conductor</button>
-        <button id="btnCaida" class="tab-btn" onclick="mostrarSeccion('caida')">📉 Caída de tensión</button>
-        <button id="btnFactor" class="tab-btn" onclick="mostrarSeccion('factor')">⚡ Factor de potencia</button>
+      <div id="menuCalculadoras" class="menu-calculadoras oculto-impresion">
+        <h3 id="tituloMenu" tabindex="-1">Seleccione una calculadora</h3>
+        <div class="calculadoras-grid">
+          <button type="button" id="btnProtecciones" class="calculadora-card" onclick="mostrarSeccion('protecciones')">
+            <span class="calculadora-icono"><svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="16"/><path d="M3 24h5m32 0h5M16 31V17l8 9 8-9v14"/></svg></span>
+            <span class="calculadora-texto"><strong>Arranque de motores</strong><span>Dimensionamiento y selección de dispositivos de arranque y protección para motores trifásicos y monofásicos.</span></span>
+            <svg class="calculadora-flecha" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+          <button type="button" id="btnConductores" class="calculadora-card" onclick="mostrarSeccion('conductores')">
+            <span class="calculadora-icono"><svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="28" height="24" rx="8"/><path d="M21 18h21M21 24h23M21 30h19"/><circle cx="13" cy="24" r="3"/></svg></span>
+            <span class="calculadora-texto"><strong>Dimensionamiento de conductores</strong><span>Cálculo y selección de la sección del conductor según la carga y las condiciones de instalación.</span></span>
+            <svg class="calculadora-flecha" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+          <button type="button" id="btnCaida" class="calculadora-card" onclick="mostrarSeccion('caida')">
+            <span class="calculadora-icono"><svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6v36h36M10 13l11 10 8-4 12 16m-10 0h10V25"/></svg></span>
+            <span class="calculadora-texto"><strong>Caída de tensión</strong><span>Cálculo de la caída de tensión en circuitos monofásicos y trifásicos.</span></span>
+            <svg class="calculadora-flecha" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+          <button type="button" id="btnFactor" class="calculadora-card" onclick="mostrarSeccion('factor')">
+            <span class="calculadora-icono"><svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4v14M8 18h32M8 29h32M24 29v15"/></svg></span>
+            <span class="calculadora-texto"><strong>Factor de potencia y banco de capacitores</strong><span>Calcula la potencia reactiva necesaria y estima el factor de potencia corregido con un banco comercial.</span></span>
+            <svg class="calculadora-flecha" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div class="accesos-inicio"><button type="button" class="modo-btn" onclick="toggleHistorial(true); document.getElementById('historialPanel').scrollIntoView({block:'start'})">📚 Historial</button><button type="button" class="modo-btn" onclick="togglePanelDatos(true); document.getElementById('panelDatos').scrollIntoView({block:'start'})">💾 Datos y respaldo</button></div>
+      </div>
+      <div id="navegacionCalculadora" class="navegacion-calculadora oculto-impresion" hidden>
+        <button type="button" class="volver-inicio" onclick="mostrarSeccion('inicio')">← Menú principal</button>
+        <h3 id="tituloCalculadora" tabindex="-1"></h3>
       </div>
 
-      <div id="seccionProtecciones">
+      <div id="seccionProtecciones" style="display:none;">
         <div id="motorUxRoot">
           <div class="modo-calculo oculto-impresion">
             <button id="modoRapidoBtn" class="activo" type="button" onclick="setModoMotor('rapido')">⚡ Cálculo rápido</button>
@@ -1015,14 +1041,14 @@
           <details class="motor-card" open>
             <summary>1. Ver datos básicos del motor</summary>
             <div class="motor-card-body">
-              <div class="grupo-campo"><label for="potenciaHp">Potencia del motor (HP)</label><input type="number" id="potenciaHp" step="0.01" placeholder="Ej: 7.5" oninput="hpToKw()"><div class="info-unidad">Conversión automática a kW.</div><div class="error-msg" id="error-potenciaHp"></div></div>
-              <div class="grupo-campo"><label for="potenciaKw">Potencia del motor (kW)</label><input type="number" id="potenciaKw" step="0.01" placeholder="Ej: 5.6" oninput="kwToHp()"><div class="info-unidad">Conversión automática a HP.</div><div class="error-msg" id="error-potenciaKw"></div></div>
+              <div class="grupo-campo"><label for="potenciaHp">Potencia del motor (HP)</label><input type="number" inputmode="decimal" id="potenciaHp" step="0.01" placeholder="Ej: 7.5" oninput="hpToKw()"><div class="info-unidad">Conversión automática a kW.</div><div class="error-msg" id="error-potenciaHp"></div></div>
+              <div class="grupo-campo"><label for="potenciaKw">Potencia del motor (kW)</label><input type="number" inputmode="decimal" id="potenciaKw" step="0.01" placeholder="Ej: 5.6" oninput="kwToHp()"><div class="info-unidad">Conversión automática a HP.</div><div class="error-msg" id="error-potenciaKw"></div></div>
               <div class="grupo-campo"><label for="sistemaMotor">Sistema</label><select id="sistemaMotor" onchange="syncVoltageOptions()"><option value="3f" selected>Trifásico</option><option value="1f">Monofásico</option></select></div>
               <div class="grupo-campo"><label for="voltaje">Tensión de servicio (V)</label><select id="voltaje"></select></div>
               <div class="grupo-campo"><label for="normaMotor">Norma / criterio <span class="campo-ayuda" data-tip="IEC queda seleccionada por defecto para cálculo rápido, pero puedes cambiar a NEC. La norma modifica los criterios de selección de protección y sobrecarga.">i</span></label><select id="normaMotor" onchange="actualizarCamposNormaMotor()"><option value="iec" selected>IEC · IEC 60947 / IEC 60364</option><option value="nec">NEC · Artículo 430</option></select><div class="info-unidad">IEC es el valor predeterminado; no se asume de forma oculta.</div></div>
               <div class="grupo-campo"><label for="tipoCargaMotor">Tipo de carga <span class="campo-ayuda" data-tip="La app usa este dato para sugerir Ia/In, tiempo de aceleración y frecuencia de arranques. En Modo profesional podrás ajustar los valores.">i</span></label><select id="tipoCargaMotor" onchange="actualizarSugerenciasMotor()"><option value="bomba" selected>Bomba centrífuga</option><option value="ventilador">Ventilador</option><option value="compresor">Compresor</option><option value="transportador">Transportador</option><option value="triturador">Trituradora / molino</option><option value="elevador">Elevador</option><option value="otra">Otra / no especificada</option></select><div class="info-unidad" id="sugerenciaCargaMotor">Se aplicarán valores orientativos de arranque que puedes revisar en Modo profesional.</div></div>
-              <div class="grupo-campo"><label for="eficiencia">Eficiencia estimada (η) <span class="campo-ayuda" data-tip="Si no tienes el dato de placa, usa una estimación razonable. La corriente calculada depende directamente de este valor.">i</span></label><input type="number" id="eficiencia" value="0.90" min="0.5" max="1" step="0.01"><div class="error-msg" id="error-eficiencia"></div></div>
-              <div class="grupo-campo"><label for="fp">Factor de potencia (cos φ) <span class="campo-ayuda" data-tip="Relación entre potencia activa y aparente. Si no lo conoces, usa el valor de placa o una estimación conservadora.">i</span></label><input type="number" id="fp" value="0.85" min="0.1" max="1" step="0.01"><div class="error-msg" id="error-fp"></div></div>
+              <div class="grupo-campo"><label for="eficiencia">Eficiencia estimada (η) <span class="campo-ayuda" data-tip="Si no tienes el dato de placa, usa una estimación razonable. La corriente calculada depende directamente de este valor.">i</span></label><input type="number" inputmode="decimal" id="eficiencia" value="0.90" min="0.5" max="1" step="0.01"><div class="error-msg" id="error-eficiencia"></div></div>
+              <div class="grupo-campo"><label for="fp">Factor de potencia (cos φ) <span class="campo-ayuda" data-tip="Relación entre potencia activa y aparente. Si no lo conoces, usa el valor de placa o una estimación conservadora.">i</span></label><input type="number" inputmode="decimal" id="fp" value="0.85" min="0.1" max="1" step="0.01"><div class="error-msg" id="error-fp"></div></div>
               <div class="grupo-campo"><label for="arranque">Tipo de arranque</label><select id="arranque" onchange="actualizarSugerenciasMotor()"><option value="1">Directo</option><option value="estrella">Estrella-triángulo</option><option value="0.7">Arrancador suave</option><option value="vfd">Variador de frecuencia (VFD)</option></select></div>
             </div>
           </details>
@@ -1030,8 +1056,8 @@
           <details class="motor-card solo-profesional">
             <summary>2. Ver datos de placa y mecánicos</summary>
             <div class="motor-card-body">
-              <div class="grupo-campo"><label for="corrientePlaca">Corriente de placa (A) <span class="campo-ayuda" data-tip="Dato recomendado. Si lo ingresas, tendrá prioridad para contactor y protección de sobrecarga.">i</span></label><input type="number" id="corrientePlaca" step="0.1" min="0" placeholder="Ej: 28.4"><div class="error-msg" id="error-corrientePlaca"></div></div>
-              <div class="grupo-campo"><label for="rpmMotor">Velocidad nominal (rpm) <span class="campo-ayuda" data-tip="Velocidad mecánica indicada en placa. Permite estimar deslizamiento si también se conoce frecuencia y número de polos.">i</span></label><input type="number" id="rpmMotor" step="1" min="0" placeholder="Ej: 1750"></div>
+              <div class="grupo-campo"><label for="corrientePlaca">Corriente de placa (A) <span class="campo-ayuda" data-tip="Dato recomendado. Si lo ingresas, tendrá prioridad para contactor y protección de sobrecarga.">i</span></label><input type="number" inputmode="decimal" id="corrientePlaca" step="0.1" min="0" placeholder="Ej: 28.4"><div class="error-msg" id="error-corrientePlaca"></div></div>
+              <div class="grupo-campo"><label for="rpmMotor">Velocidad nominal (rpm) <span class="campo-ayuda" data-tip="Velocidad mecánica indicada en placa. Permite estimar deslizamiento si también se conoce frecuencia y número de polos.">i</span></label><input type="number" inputmode="numeric" id="rpmMotor" step="1" min="0" placeholder="Ej: 1750"></div>
               <div class="grupo-campo"><label for="frecuenciaMotor">Frecuencia (Hz)</label><select id="frecuenciaMotor"><option value="60" selected>60 Hz</option><option value="50">50 Hz</option></select></div>
               <div class="grupo-campo"><label for="polosMotor">Número de polos</label><select id="polosMotor"><option value="2">2 polos</option><option value="4" selected>4 polos</option><option value="6">6 polos</option><option value="8">8 polos</option><option value="10">10 polos</option><option value="12">12 polos</option></select></div>
               <div class="grupo-campo"><label for="regimenMotor">Régimen de servicio</label><select id="regimenMotor"><option value="S1" selected>S1 · Servicio continuo</option><option value="S2">S2 · Corta duración</option><option value="S3">S3 · Intermitente periódico</option><option value="S4">S4 · Intermitente con arranque</option></select></div>
@@ -1041,9 +1067,9 @@
           <details class="motor-card solo-profesional">
             <summary>3. Ver características de arranque</summary>
             <div class="motor-card-body">
-              <div class="grupo-campo"><label for="relacionArranque">Corriente de arranque Ia/In <span class="campo-ayuda" data-tip="Cuántas veces la corriente nominal demanda el motor durante el arranque. Si no conoces el dato, la app usa un valor orientativo según el tipo de arranque.">i</span></label><input type="number" id="relacionArranque" value="6" step="0.1" min="1" max="20"><div class="estimacion-badge">Editable · puede ser estimado</div><div class="error-msg" id="error-relacionArranque"></div></div>
-              <div class="grupo-campo"><label for="tiempoArranque">Tiempo de aceleración (s) <span class="campo-ayuda" data-tip="Tiempo aproximado desde reposo hasta velocidad de régimen. Influye en la clase del relé y coordinación de protecciones.">i</span></label><input type="number" id="tiempoArranque" value="5" step="0.5" min="0.5" max="120"><div class="error-msg" id="error-tiempoArranque"></div></div>
-              <div class="grupo-campo"><label for="arranquesHora">Arranques por hora</label><input type="number" id="arranquesHora" value="4" step="1" min="0" max="120"></div>
+              <div class="grupo-campo"><label for="relacionArranque">Corriente de arranque Ia/In <span class="campo-ayuda" data-tip="Cuántas veces la corriente nominal demanda el motor durante el arranque. Si no conoces el dato, la app usa un valor orientativo según el tipo de arranque.">i</span></label><input type="number" inputmode="decimal" id="relacionArranque" value="6" step="0.1" min="1" max="20"><div class="estimacion-badge">Editable · puede ser estimado</div><div class="error-msg" id="error-relacionArranque"></div></div>
+              <div class="grupo-campo"><label for="tiempoArranque">Tiempo de aceleración (s) <span class="campo-ayuda" data-tip="Tiempo aproximado desde reposo hasta velocidad de régimen. Influye en la clase del relé y coordinación de protecciones.">i</span></label><input type="number" inputmode="decimal" id="tiempoArranque" value="5" step="0.5" min="0.5" max="120"><div class="error-msg" id="error-tiempoArranque"></div></div>
+              <div class="grupo-campo"><label for="arranquesHora">Arranques por hora</label><input type="number" inputmode="numeric" id="arranquesHora" value="4" step="1" min="0" max="120"></div>
               <div class="grupo-campo" id="campoPosicionRele" style="display:none;"><label for="posicionRele">Relé térmico en estrella-triángulo</label><select id="posicionRele"><option value="delta" selected>Dentro del delta (≈ 0.58 × In)</option><option value="linea">En línea (≈ 1.00 × In)</option></select></div>
             </div>
           </details>
@@ -1051,20 +1077,21 @@
           <details class="motor-card solo-profesional">
             <summary>4. Ver norma y coordinación avanzada</summary>
             <div class="motor-card-body">
-              <div class="grupo-campo"><label for="iccDisponible">Icc disponible (kA) <span class="campo-ayuda" data-tip="Corriente de cortocircuito disponible en el punto de instalación. Sirve para comprobar el poder de corte mínimo Icu/Icn.">i</span></label><input type="number" id="iccDisponible" step="0.1" min="0" placeholder="Ej: 10"></div>
+              <div class="grupo-campo"><label for="iccDisponible">Icc disponible (kA) <span class="campo-ayuda" data-tip="Corriente de cortocircuito disponible en el punto de instalación. Sirve para comprobar el poder de corte mínimo Icu/Icn.">i</span></label><input type="number" inputmode="decimal" id="iccDisponible" step="0.1" min="0" placeholder="Ej: 10"></div>
               <div class="grupo-campo"><label for="tensionBobina">Tensión de bobina / mando</label><select id="tensionBobina"><option value="24VDC">24 VDC</option><option value="24VAC">24 VAC</option><option value="110VAC">110 VAC</option><option value="220VAC" selected>220 VAC</option><option value="380VAC">380 VAC</option></select></div>
               <div class="grupo-campo"><label for="coordinacionIEC">Coordinación IEC</label><select id="coordinacionIEC"><option value="tipo1" selected>Tipo 1</option><option value="tipo2">Tipo 2</option></select></div>
-              <div class="grupo-campo" id="campoFlcNec" style="display:none;"><label for="flcNec">FLC de tabla NEC 430 (A)</label><input type="number" id="flcNec" step="0.1" min="0" placeholder="Ej: 27.0"><div class="error-msg" id="error-flcNec"></div></div>
-              <div id="camposNecMotor" style="display:none;"><div class="grupo-campo"><label for="serviceFactor">Service Factor (SF)</label><input type="number" id="serviceFactor" value="1.00" step="0.01" min="1" max="1.5"></div><div class="grupo-campo"><label for="tempRiseMotor">Elevación de temperatura de placa</label><select id="tempRiseMotor"><option value="unknown" selected>No indicada / desconocida</option><option value="40">40 °C o menor</option><option value="gt40">Mayor de 40 °C</option></select></div></div>
+              <div class="grupo-campo" id="campoFlcNec" style="display:none;"><label for="flcNec">FLC de tabla NEC 430 (A)</label><input type="number" inputmode="decimal" id="flcNec" step="0.1" min="0" placeholder="Ej: 27.0"><div class="error-msg" id="error-flcNec"></div></div>
+              <div id="camposNecMotor" style="display:none;"><div class="grupo-campo"><label for="serviceFactor">Service Factor (SF)</label><input type="number" inputmode="decimal" id="serviceFactor" value="1.00" step="0.01" min="1" max="1.5"></div><div class="grupo-campo"><label for="tempRiseMotor">Elevación de temperatura de placa</label><select id="tempRiseMotor"><option value="unknown" selected>No indicada / desconocida</option><option value="40">40 °C o menor</option><option value="gt40">Mayor de 40 °C</option></select></div></div>
             </div>
           </details>
         </div>
 
         <div class="botones oculto-impresion"><button type="button" onclick="calcularProtecciones()">Calcular</button><button type="button" class="secundario" onclick="limpiarProtecciones()">Limpiar</button><button type="button" class="secundario" onclick="imprimirSeccion('protecciones')">🖨 Imprimir / Guardar PDF</button></div>
-        <div id="resultadoProtecciones" class="resultado"></div>
+        <div id="resultadoProtecciones" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
       </div>
 
-      <div id="seccionConductores" style="display:none;">
+      <div id="seccionConductores" class="formulario-directo" style="display:none;">
+        <div class="campos-grid">
         <div class="grupo-campo">
           <label for="sistemaConductor">Sistema</label>
           <select id="sistemaConductor" onchange="syncVoltageOptions()">
@@ -1086,7 +1113,7 @@
 
         <div class="grupo-campo">
           <label for="corrienteCond">Corriente nominal del circuito In (A)</label>
-          <input type="number" id="corrienteCond" step="0.1" placeholder="Ej: 18.5">
+          <input type="number" inputmode="decimal" id="corrienteCond" step="0.1" placeholder="Ej: 18.5">
           <div class="info-unidad">Ingresa la corriente nominal real del circuito o motor.</div>
           <div class="error-msg" id="error-corrienteCond"></div>
         </div>
@@ -1110,7 +1137,7 @@
 
         <div class="grupo-campo">
           <label for="longitud">Longitud del circuito (ida) en metros</label>
-          <input type="number" id="longitud" step="1" placeholder="Ej: 35">
+          <input type="number" inputmode="numeric" id="longitud" step="1" placeholder="Ej: 35">
           <div class="error-msg" id="error-longitud"></div>
         </div>
 
@@ -1124,7 +1151,7 @@
 
         <div class="grupo-campo">
           <label for="caidaMax">Caída de tensión máxima permitida (%)</label>
-          <input type="number" id="caidaMax" value="3" min="1" max="10" step="0.1">
+          <input type="number" inputmode="decimal" id="caidaMax" value="3" min="1" max="10" step="0.1">
           <div class="info-unidad">Referencia típica CNE/IEC: 3% para alimentadores de motor, 5% máximo total.</div>
           <div class="error-msg" id="error-caidaMax"></div>
         </div>
@@ -1172,19 +1199,20 @@
           <div class="info-unidad">Se usa para aplicar un factor de agrupamiento aproximado.</div>
         </div>
 
+        </div>
         <div class="botones oculto-impresion">
           <button type="button" onclick="calcularConductor()">Calcular conductor</button>
           <button type="button" class="secundario" onclick="limpiarConductores()">Limpiar</button>
           <button type="button" class="secundario" onclick="imprimirSeccion('conductores')">🖨 Imprimir / Guardar PDF</button>
         </div>
 
-        <div id="resultadoConductor" class="resultado"></div>
+        <div id="resultadoConductor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
       </div>
 
       <div id="seccionFactor" style="display:none;">
         <div class="pf-hero">
           <div>
-            <span class="pf-kicker">POWER QUALITY</span>
+            <span class="pf-kicker">CALIDAD DE ENERGÍA</span>
             <h3>Corrección del factor de potencia</h3>
             <p>Dimensiona un banco de condensadores para motor individual o instalación general y revisa su efecto sobre corriente, reactiva y capacitancia.</p>
           </div>
@@ -1195,11 +1223,11 @@
           <summary>1. Ver datos de la carga</summary>
           <div class="motor-card-body">
             <div class="grupo-campo"><label for="modoPF">Aplicación</label><select id="modoPF" onchange="actualizarModoPF()"><option value="motor" selected>Motor individual</option><option value="general">Banco general / instalación</option></select></div>
-            <div class="grupo-campo" id="campoPotMotorPF"><label for="potMotorPF">Potencia mecánica del motor (kW)</label><input type="number" id="potMotorPF" step="0.01" min="0" placeholder="Ej: 30"><div class="info-unidad">Para motor individual se convierte a potencia activa eléctrica usando la eficiencia.</div></div>
-            <div class="grupo-campo" id="campoEficienciaPF"><label for="eficienciaPF">Eficiencia del motor η</label><input type="number" id="eficienciaPF" value="0.92" min="0.5" max="1" step="0.01"></div>
-            <div class="grupo-campo" id="campoPotGeneralPF" style="display:none;"><label for="potActivaPF">Potencia activa de la instalación (kW)</label><input type="number" id="potActivaPF" step="0.01" min="0" placeholder="Ej: 120"></div>
+            <div class="grupo-campo" id="campoPotMotorPF"><label for="potMotorPF">Potencia mecánica del motor (kW)</label><input type="number" inputmode="decimal" id="potMotorPF" step="0.01" min="0" placeholder="Ej: 30"><div class="info-unidad">Para motor individual se convierte a potencia activa eléctrica usando la eficiencia.</div></div>
+            <div class="grupo-campo" id="campoEficienciaPF"><label for="eficienciaPF">Eficiencia del motor η</label><input type="number" inputmode="decimal" id="eficienciaPF" value="0.92" min="0.5" max="1" step="0.01"></div>
+            <div class="grupo-campo" id="campoPotGeneralPF" style="display:none;"><label for="potActivaPF">Potencia activa de la instalación (kW)</label><input type="number" inputmode="decimal" id="potActivaPF" step="0.01" min="0" placeholder="Ej: 120"></div>
             <div class="grupo-campo"><label for="sistemaPF">Sistema</label><select id="sistemaPF"><option value="3f" selected>Trifásico</option><option value="1f">Monofásico</option></select></div>
-            <div class="grupo-campo"><label for="voltajePF">Tensión de servicio (V)</label><input type="number" id="voltajePF" value="380" step="1" min="1"></div>
+            <div class="grupo-campo"><label for="voltajePF">Tensión de servicio (V)</label><input type="number" inputmode="numeric" id="voltajePF" value="380" step="1" min="1"></div>
             <div class="grupo-campo"><label for="frecuenciaPF">Frecuencia</label><select id="frecuenciaPF"><option value="60" selected>60 Hz</option><option value="50">50 Hz</option></select></div>
           </div>
         </details>
@@ -1207,9 +1235,9 @@
         <details class="motor-card" open>
           <summary>2. Ver objetivo de compensación</summary>
           <div class="motor-card-body">
-            <div class="grupo-campo"><label for="fpActualPF">Factor de potencia actual</label><input type="number" id="fpActualPF" value="0.80" min="0.1" max="0.999" step="0.01"></div>
-            <div class="grupo-campo"><label for="fpObjetivoPF">Factor de potencia objetivo</label><input type="number" id="fpObjetivoPF" value="0.95" min="0.5" max="0.999" step="0.01"></div>
-            <div class="grupo-campo" id="campoI0PF"><label for="corrienteVacioPF">Corriente en vacío I₀ (A) <span class="campo-ayuda" data-tip="Opcional. Permite verificar que la corriente del condensador quede por debajo de aproximadamente 90% de la corriente en vacío del motor.">i</span></label><input type="number" id="corrienteVacioPF" step="0.1" min="0" placeholder="Opcional"></div>
+            <div class="grupo-campo"><label for="fpActualPF">Factor de potencia actual</label><input type="number" inputmode="decimal" id="fpActualPF" value="0.80" min="0.1" max="0.999" step="0.01"></div>
+            <div class="grupo-campo"><label for="fpObjetivoPF">Factor de potencia objetivo</label><input type="number" inputmode="decimal" id="fpObjetivoPF" value="0.95" min="0.5" max="0.999" step="0.01"></div>
+            <div class="grupo-campo" id="campoI0PF"><label for="corrienteVacioPF">Corriente en vacío I₀ (A) <span class="campo-ayuda" data-tip="Opcional. Permite verificar que la corriente del condensador quede por debajo de aproximadamente 90% de la corriente en vacío del motor.">i</span></label><input type="number" inputmode="decimal" id="corrienteVacioPF" step="0.1" min="0" placeholder="Opcional"></div>
             <div class="grupo-campo"><label for="armonicosPF">¿Hay VFD, UPS, rectificadores u otras cargas no lineales importantes?</label><select id="armonicosPF"><option value="no" selected>No / no significativo</option><option value="si">Sí / hay armónicos relevantes</option></select></div>
           </div>
         </details>
@@ -1223,10 +1251,11 @@
         </details>
 
         <div class="botones oculto-impresion"><button type="button" onclick="calcularFactorPotencia()">Calcular banco</button><button type="button" class="secundario" onclick="limpiarFactorPotencia()">Limpiar</button><button type="button" class="secundario" onclick="imprimirSeccion('factor')">🖨 Imprimir / Guardar PDF</button></div>
-        <div id="resultadoFactor" class="resultado"></div>
+        <div id="resultadoFactor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
       </div>
 
-      <div id="seccionCaida" style="display:none;">
+      <div id="seccionCaida" class="formulario-directo" style="display:none;">
+        <div class="campos-grid">
         <div class="grupo-campo">
           <label for="sistemaCaida">Sistema</label>
           <select id="sistemaCaida" onchange="syncVoltageOptions()">
@@ -1237,7 +1266,7 @@
 
         <div class="grupo-campo">
           <label for="corrienteCaida">Corriente de carga (A)</label>
-          <input type="number" id="corrienteCaida" step="0.1" placeholder="Ej: 28.5">
+          <input type="number" inputmode="decimal" id="corrienteCaida" step="0.1" placeholder="Ej: 28.5">
           <div class="error-msg" id="error-corrienteCaida"></div>
         </div>
 
@@ -1249,7 +1278,7 @@
 
         <div class="grupo-campo">
           <label for="longitudCaida">Longitud del circuito (ida) en metros</label>
-          <input type="number" id="longitudCaida" step="1" placeholder="Ej: 45">
+          <input type="number" inputmode="numeric" id="longitudCaida" step="1" placeholder="Ej: 45">
           <div class="error-msg" id="error-longitudCaida"></div>
         </div>
 
@@ -1295,17 +1324,18 @@
 
         <div class="grupo-campo">
           <label for="caidaObjetivo">Caída objetivo máxima (%)</label>
-          <input type="number" id="caidaObjetivo" value="3" min="0.5" max="10" step="0.1">
+          <input type="number" inputmode="decimal" id="caidaObjetivo" value="3" min="0.5" max="10" step="0.1">
           <div class="error-msg" id="error-caidaObjetivo"></div>
         </div>
 
+        </div>
         <div class="botones oculto-impresion">
           <button type="button" onclick="calcularCaida()">Calcular caída</button>
           <button type="button" class="secundario" onclick="limpiarCaida()">Limpiar</button>
           <button type="button" class="secundario" onclick="imprimirSeccion('caida')">🖨 Imprimir / Guardar PDF</button>
         </div>
 
-        <div id="resultadoCaida" class="resultado"></div>
+        <div id="resultadoCaida" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
       </div>
 
       <div id="historialPanel" class="historial-panel oculto-impresion">
@@ -1406,7 +1436,7 @@
     function aplicarModoGuardado() {
       const modo = localStorage.getItem(STORAGE_MODE_KEY);
       document.body.classList.remove('light', 'dark');
-      document.body.classList.add(modo === 'light' ? 'light' : 'dark');
+      document.body.classList.add(modo === 'dark' ? 'dark' : 'light');
     }
 
     function toggleModo() {
@@ -1431,19 +1461,18 @@
         caida: document.getElementById("seccionCaida"),
         factor: document.getElementById("seccionFactor")
       };
-      const buttons = {
-        protecciones: document.getElementById("btnProtecciones"),
-        conductores: document.getElementById("btnConductores"),
-        caida: document.getElementById("btnCaida"),
-        factor: document.getElementById("btnFactor")
-      };
-
-      Object.values(sections).forEach(sec => { if (sec) sec.style.display = "none"; });
-      Object.values(buttons).forEach(btn => { if (btn) btn.classList.remove("activo"); });
-
-      const key = sections[seccion] ? seccion : 'protecciones';
-      sections[key].style.display = "block";
-      buttons[key].classList.add("activo");
+      const titles = {"protecciones":"Arranque de motores","conductores":"Dimensionamiento de conductores","caida":"Caída de tensión","factor":"Factor de potencia y banco de capacitores"};
+      const menu = document.getElementById('menuCalculadoras');
+      const nav = document.getElementById('navegacionCalculadora');
+      const key = Object.prototype.hasOwnProperty.call(sections,seccion) ? seccion : 'inicio';
+      Object.entries(sections).forEach(([name,sec]) => { sec.style.display = name === key ? 'block' : 'none'; });
+      document.querySelector('.app-shell').dataset.view = key;
+      menu.hidden = key !== 'inicio';
+      nav.hidden = key === 'inicio';
+      const heading = document.getElementById(key === 'inicio' ? 'tituloMenu' : 'tituloCalculadora');
+      if (key !== 'inicio') heading.textContent = titles[key];
+      window.scrollTo(0,0);
+      heading.focus({preventScroll:true});
     }
 
     function setError(id, message) {
@@ -1537,7 +1566,7 @@
         formData: isLocalSaveEnabled() ? JSON.parse(localStorage.getItem(STORAGE_DATA_KEY) || '{}') : {},
         history: isLocalSaveEnabled() ? getHistory() : [],
         preferences: {
-          mode: localStorage.getItem(STORAGE_MODE_KEY) || 'dark'
+          mode: localStorage.getItem(STORAGE_MODE_KEY) || 'light'
         }
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1668,6 +1697,10 @@
       } else if (item.tipo === 'conductores') {
         mostrarSeccion('conductores');
         calcularConductor();
+      } else if (item.tipo === 'factor') {
+        mostrarSeccion('factor');
+        actualizarModoPF();
+        calcularFactorPotencia();
       } else {
         mostrarSeccion('caida');
         calcularCaida();
@@ -1683,7 +1716,7 @@
       }
       const data = getHistory();
       if (!data.length) {
-        lista.innerHTML = '<div class="hist-empty">Aún no hay cálculos guardados. Cuando calcules motor, conductor o caída de tensión, aparecerán aquí.</div>';
+        lista.innerHTML = '<div class="hist-empty">Aún no hay cálculos guardados. Los resultados de las calculadoras aparecerán aquí.</div>';
         return;
       }
       lista.innerHTML = data.map((item, index) => `
@@ -2916,6 +2949,7 @@
       actualizarCamposNormaMotor();
       actualizarSugerenciasMotor();
       setModoMotor(localStorage.getItem('modoMotorPASIR') || 'rapido');
+      actualizarModoPF();
       const arranqueActual = document.getElementById('arranque')?.value;
       if (arranqueActual === 'estrella') document.getElementById('campoPosicionRele').style.display = 'block';
       toggleSocialLinks(isLocalSaveEnabled() && localStorage.getItem(STORAGE_SOCIAL_KEY) === '1');

@@ -3,8 +3,8 @@
   "short_name": "CalcTrifásica",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#1e1e1e",
-  "theme_color": "#66b3ff",
+  "background_color": "#edf2f7",
+  "theme_color": "#12365b",
   "icons": [
     {
       "src": "imagenes/logo.png",
