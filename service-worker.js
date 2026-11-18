@@ -1,9 +1,9 @@
-const CACHE_NAME = 'calc-v3-responsive';
-const OLD_CACHE = 'calc-v2-motor';
+const CACHE_NAME = 'calc-v4-resultados';
+const OLD_CACHES = ['calc-v2-motor','calc-v3-responsive'];
 const scope = self.registration.scope;
 const appUrl = path => new URL(path, scope).href;
 const APP_SHELL = [
-  './', 'index.html', 'instalar.html', 'manifest.json', 'interfaz.css?v=3',
+  './', 'index.html', 'instalar.html', 'manifest.json', 'interfaz.css?v=4',
   'imagenes/logo.png', 'imagenes/itm.png', 'imagenes/contactor.png',
   'imagenes/rele.png', 'imagenes/motor.png', 'imagenes/diferencial.png',
   'imagenes/tiktok.png', 'imagenes/facebook.png', 'imagenes/youtube.png',
@@ -21,7 +21,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key === OLD_CACHE).map(key => caches.delete(key)));
+    await Promise.all(keys.filter(key => OLD_CACHES.includes(key)).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });

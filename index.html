@@ -951,7 +951,7 @@
     @media(max-width:560px){.pf-hero{align-items:flex-start}.pf-symbol{min-width:68px;height:68px;font-size:1.05rem}}
 
 </style>
-  <link rel="stylesheet" href="interfaz.css?v=3">
+  <link rel="stylesheet" href="interfaz.css?v=4">
 </head>
 <body class="light">
   <div class="contenedor">
@@ -1031,6 +1031,7 @@
       </div>
 
       <div id="seccionProtecciones" style="display:none;">
+<div class="calc-workspace" data-phase="input"><div class="calc-form"><div class="calc-step">01 / 02 · Datos del cálculo</div>
         <div id="motorUxRoot">
           <div class="modo-calculo oculto-impresion">
             <button id="modoRapidoBtn" class="activo" type="button" onclick="setModoMotor('rapido')">⚡ Cálculo rápido</button>
@@ -1086,11 +1087,13 @@
           </details>
         </div>
 
-        <div class="botones oculto-impresion"><button type="button" onclick="calcularProtecciones()">Calcular</button><button type="button" class="secundario" onclick="limpiarProtecciones()">Limpiar</button><button type="button" class="secundario" onclick="imprimirSeccion('protecciones')">🖨 Imprimir / Guardar PDF</button></div>
-        <div id="resultadoProtecciones" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
+        <div class="botones oculto-impresion"><button type="button" onclick="calcularProtecciones()">Calcular</button><button type="button" class="secundario" onclick="limpiarProtecciones()">Limpiar</button></div>
+        </div>
+<div id="resultadoProtecciones" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div></div>
       </div>
 
       <div id="seccionConductores" class="formulario-directo" style="display:none;">
+<div class="calc-workspace" data-phase="input"><div class="calc-form"><div class="calc-step">01 / 02 · Datos del cálculo</div>
         <div class="campos-grid">
         <div class="grupo-campo">
           <label for="sistemaConductor">Sistema</label>
@@ -1203,13 +1206,15 @@
         <div class="botones oculto-impresion">
           <button type="button" onclick="calcularConductor()">Calcular conductor</button>
           <button type="button" class="secundario" onclick="limpiarConductores()">Limpiar</button>
-          <button type="button" class="secundario" onclick="imprimirSeccion('conductores')">🖨 Imprimir / Guardar PDF</button>
+          
         </div>
 
-        <div id="resultadoConductor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
+        </div>
+<div id="resultadoConductor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div></div>
       </div>
 
       <div id="seccionFactor" style="display:none;">
+<div class="calc-workspace" data-phase="input"><div class="calc-form"><div class="calc-step">01 / 02 · Datos del cálculo</div>
         <div class="pf-hero">
           <div>
             <span class="pf-kicker">CALIDAD DE ENERGÍA</span>
@@ -1250,11 +1255,13 @@
           </div>
         </details>
 
-        <div class="botones oculto-impresion"><button type="button" onclick="calcularFactorPotencia()">Calcular banco</button><button type="button" class="secundario" onclick="limpiarFactorPotencia()">Limpiar</button><button type="button" class="secundario" onclick="imprimirSeccion('factor')">🖨 Imprimir / Guardar PDF</button></div>
-        <div id="resultadoFactor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
+        <div class="botones oculto-impresion"><button type="button" onclick="calcularFactorPotencia()">Calcular banco</button><button type="button" class="secundario" onclick="limpiarFactorPotencia()">Limpiar</button></div>
+        </div>
+<div id="resultadoFactor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div></div>
       </div>
 
       <div id="panelCaida" class="formulario-directo" style="display:none;">
+<div class="calc-workspace" data-phase="input"><div class="calc-form"><div class="calc-step">01 / 02 · Datos del cálculo</div>
         <div class="campos-grid">
         <div class="grupo-campo">
           <label for="sistemaCaida">Sistema</label>
@@ -1332,10 +1339,11 @@
         <div class="botones oculto-impresion">
           <button type="button" onclick="calcularCaida()">Calcular caída</button>
           <button type="button" class="secundario" onclick="limpiarCaida()">Limpiar</button>
-          <button type="button" class="secundario" onclick="imprimirSeccion('caida')">🖨 Imprimir / Guardar PDF</button>
+          
         </div>
 
-        <div id="resultadoCaida" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
+        </div>
+<div id="resultadoCaida" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div></div>
       </div>
 
       <div id="historialPanel" class="historial-panel oculto-impresion">
@@ -1454,6 +1462,60 @@
       if (isLocalSaveEnabled()) localStorage.setItem(STORAGE_SOCIAL_KEY, shouldOpen ? '1' : '0');
     }
 
+
+    const calcUX = {"protecciones":["seccionProtecciones","resultadoProtecciones","In usada para equipos",["Ia estimada","Arranque"]],"conductores":["seccionConductores","resultadoConductor","Sección recomendada",["Ampacidad corregida","Caída estimada","Corriente de diseño Id"]],"factor":["seccionFactor","resultadoFactor","Qc calculado",["Banco comercial","FP estimado real","Corriente del banco"]],"caida":["panelCaida","resultadoCaida","ΔV porcentual",["ΔV estimada","Sección mínima sugerida","Longitud máxima"]]};
+    function editarCalculo(key, scroll = true) {
+      const [panel,id] = calcUX[key];
+      const root = document.getElementById(panel).querySelector('.calc-workspace');
+      root.dataset.phase = 'input';
+      const out = document.getElementById(id);
+      out.style.display = 'none';
+      out.innerHTML = '';
+      if(scroll){ window.scrollTo(0,0); document.getElementById('tituloCalculadora').focus({preventScroll:true}); }
+    }
+    function presentarCalculo(key) {
+      const [panel,id,principal,secundarios] = calcUX[key];
+      const out = document.getElementById(id);
+      const root = document.getElementById(panel).querySelector('.calc-workspace');
+      const grid = out.querySelector('.resumen-grid');
+      if(!grid) return;
+      const boxes = Array.from(grid.querySelectorAll('.dato-box'));
+      const label = el => el.querySelector('small')?.textContent.trim() || '';
+      const main = boxes.find(el=>label(el)===principal);
+      if(main){ main.classList.add('calc-primary'); grid.prepend(main); }
+      const detail = document.createElement('details');
+      detail.className='calc-details';
+      const summary = document.createElement('summary');
+      summary.textContent='Datos y valores complementarios';
+      detail.append(summary);
+      const extra = document.createElement('div'); extra.className='resumen-grid';
+      detail.append(extra);
+      for(const box of boxes) if(box!==main && !secundarios.some(s=>label(box).startsWith(s))) extra.append(box);
+      if(extra.children.length) grid.after(detail);
+      if(key==='protecciones'){
+        const cards=Array.from(out.querySelectorAll(':scope > .proteccion'));
+        if(cards.length){const stack=document.createElement('div');stack.className='calc-equipment';cards[0].before(stack);cards.forEach(card=>stack.append(card));grid.after(stack);}
+        const recap=out.querySelector('.resultado-resumen');
+        if(recap){const d=document.createElement('details');d.className='calc-details';const s=document.createElement('summary');s.textContent='Resumen adicional del motor';recap.before(d);d.append(s,recap);}
+      }
+      const step=document.createElement('div');step.className='calc-step oculto-impresion';step.textContent='02 / 02 · Resultados del cálculo';
+      out.prepend(step);
+      const actions=document.createElement('div');actions.className='calc-actions oculto-impresion';
+      const action=(label,fn,primary=false)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className=primary?'calc-action-primary':'calc-action';b.addEventListener('click',fn);actions.append(b);};
+      action('Inicio',()=>mostrarSeccion('inicio'));
+      action('Editar datos',()=>editarCalculo(key),true);
+      action('Historial',()=>{toggleHistorial(true);document.getElementById('historialPanel').scrollIntoView({block:'start'});});
+      action('Reporte PDF',()=>{out.querySelectorAll('details.calc-details').forEach(d=>d.open=true);imprimirSeccion(key);});
+      out.append(actions);
+      const status=document.createElement('p');status.className='calc-save-note oculto-impresion';status.textContent=isLocalSaveEnabled()?'El cálculo se guarda automáticamente en tu historial.':'Autoguardado desactivado. Puedes exportar el reporte PDF.';out.append(status);
+      root.dataset.phase='result';
+      const form=root.querySelector('.calc-form');
+      if(!form.dataset.watch){form.dataset.watch='1';form.addEventListener('input',()=>{if(root.dataset.phase==='result') editarCalculo(key,false);});form.addEventListener('change',()=>{if(root.dataset.phase==='result') editarCalculo(key,false);});}
+      if(document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      window.scrollTo(0,0);
+      out.focus({preventScroll:true});
+    }
+
     function mostrarSeccion(seccion) {
       const sections = {
         protecciones: document.getElementById("seccionProtecciones"),
@@ -1467,6 +1529,7 @@
       const key = Object.prototype.hasOwnProperty.call(sections,seccion) ? seccion : 'inicio';
       Object.entries(sections).forEach(([name,sec]) => { sec.style.display = name === key ? 'block' : 'none'; });
       document.querySelector('.app-shell').dataset.view = key;
+      if(key!=='inicio') editarCalculo(key,false);
       menu.hidden = key !== 'inicio';
       nav.hidden = key === 'inicio';
       const heading = document.getElementById(key === 'inicio' ? 'tituloMenu' : 'tituloCalculadora');
@@ -2349,6 +2412,7 @@
       const out = document.getElementById('resultadoProtecciones');
       out.innerHTML = resultadoHTML;
       out.style.display = 'block';
+      presentarCalculo('protecciones');
       saveFormData();
       saveHistoryEntry({
         tipo: 'protecciones',
@@ -2621,6 +2685,7 @@
 
       resultadoDiv.innerHTML = html;
       resultadoDiv.style.display = "block";
+      presentarCalculo('conductores');
       saveFormData();
       saveHistoryEntry({
         tipo: 'conductores',
@@ -2745,6 +2810,7 @@
         </div></div>
         <div class="aviso-tecnico"><strong>Criterio:</strong> Qc = P·(tanφ₁ − tanφ₂). En motores individuales, verifica especialmente corriente en vacío y riesgo de autoexcitación; con armónicos, usa evaluación de THD y considera reactores detunados.</div>`;
       out.style.display='block';
+      presentarCalculo('factor');
       saveFormData();
       saveHistoryEntry({tipo:'factor',titulo:'Factor de potencia',fecha:nowStamp(),estado:alertas.length?'warn':'ok',estadoTexto:alertas.length?'Revisar':'Correcto',resumen:`${P.toFixed(1)} kW · FP ${fp1.toFixed(2)}→${fpReal.toFixed(2)} · banco ${kvarSel} kVAr`,data:{modoPF:modo,potMotorPF:document.getElementById('potMotorPF').value,eficienciaPF:document.getElementById('eficienciaPF').value,potActivaPF:document.getElementById('potActivaPF').value,sistemaPF:sistema,voltajePF:V,frecuenciaPF:f,fpActualPF:fp1,fpObjetivoPF:fp2,corrienteVacioPF:document.getElementById('corrienteVacioPF').value,armonicosPF:document.getElementById('armonicosPF').value,conexionPF:conexion,tipoBancoPF:tipoBanco}});
     }
@@ -2844,6 +2910,7 @@
       const out = document.getElementById('resultadoCaida');
       out.innerHTML = html;
       out.style.display = 'block';
+      presentarCalculo('caida');
       saveFormData();
       saveHistoryEntry({
         tipo: 'caida',
