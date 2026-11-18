@@ -2816,6 +2816,7 @@
     }
 
     function limpiarFactorPotencia(){
+      editarCalculo('factor',false);
       document.getElementById('modoPF').value='motor';document.getElementById('potMotorPF').value='';document.getElementById('eficienciaPF').value='0.92';document.getElementById('potActivaPF').value='';document.getElementById('sistemaPF').value='3f';document.getElementById('voltajePF').value='380';document.getElementById('frecuenciaPF').value='60';document.getElementById('fpActualPF').value='0.80';document.getElementById('fpObjetivoPF').value='0.95';document.getElementById('corrienteVacioPF').value='';document.getElementById('armonicosPF').value='no';document.getElementById('conexionPF').value='delta';document.getElementById('tipoBancoPF').value='fijo';document.getElementById('resultadoFactor').style.display='none';document.getElementById('resultadoFactor').innerHTML='';actualizarModoPF();saveFormData();
     }
 
@@ -2933,6 +2934,7 @@
     }
 
     function limpiarProtecciones() {
+      editarCalculo('protecciones',false);
       ['potenciaHp','potenciaKw','corrientePlaca','flcNec','iccDisponible'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('normaMotor').value = 'iec';
       document.getElementById('tipoCargaMotor').value = 'bomba';
@@ -2957,6 +2959,7 @@
     }
 
     function limpiarConductores() {
+      editarCalculo('conductores',false);
       document.getElementById('sistemaConductor').value = '3f';
       syncVoltageOptions();
       document.getElementById('tipoCarga').value = 'motor';
@@ -2977,6 +2980,7 @@
     }
 
     function limpiarCaida() {
+      editarCalculo('caida',false);
       document.getElementById('sistemaCaida').value = '3f';
       syncVoltageOptions();
       document.getElementById('corrienteCaida').value = '';
