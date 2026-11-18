@@ -895,13 +895,13 @@
         border-color: #64748b !important;
       }
 
-      #seccionProtecciones, #seccionConductores, #seccionCaida, #seccionFactor {
+      #seccionProtecciones, #seccionConductores, #panelCaida, #seccionFactor {
         display: none !important;
       }
 
       body.print-protecciones #seccionProtecciones,
       body.print-conductores #seccionConductores,
-      body.print-caida #seccionCaida,
+      body.print-caida #panelCaida,
       body.print-factor #seccionFactor {
         display: block !important;
       }
@@ -1254,7 +1254,7 @@
         <div id="resultadoFactor" class="resultado" role="region" aria-label="Resultados del cálculo" tabindex="-1"></div>
       </div>
 
-      <div id="seccionCaida" class="formulario-directo" style="display:none;">
+      <div id="panelCaida" class="formulario-directo" style="display:none;">
         <div class="campos-grid">
         <div class="grupo-campo">
           <label for="sistemaCaida">Sistema</label>
@@ -1458,7 +1458,7 @@
       const sections = {
         protecciones: document.getElementById("seccionProtecciones"),
         conductores: document.getElementById("seccionConductores"),
-        caida: document.getElementById("seccionCaida"),
+        caida: document.getElementById("panelCaida"),
         factor: document.getElementById("seccionFactor")
       };
       const titles = {"protecciones":"Arranque de motores","conductores":"Dimensionamiento de conductores","caida":"Caída de tensión","factor":"Factor de potencia y banco de capacitores"};
@@ -1699,7 +1699,7 @@
         calcularConductor();
       } else if (item.tipo === 'factor') {
         mostrarSeccion('factor');
-        actualizarModoPF();
+        actualizarModoPF(true);
         calcularFactorPotencia();
       } else {
         mostrarSeccion('caida');
@@ -2649,13 +2649,13 @@
 
     const KVAR_COMERCIALES = [1,1.5,2,2.5,3,4,5,6,7.5,8,9,10,11,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,37.5,40,42.5,45,50,52.5,55,60,65,70,75,80,85,90,100,120,140,150,160,180,200,225,250,300,350];
 
-    function actualizarModoPF(){
+    function actualizarModoPF(conservarBanco = false){
       const motor=document.getElementById('modoPF')?.value==='motor';
       document.getElementById('campoPotMotorPF').style.display=motor?'block':'none';
       document.getElementById('campoEficienciaPF').style.display=motor?'block':'none';
       document.getElementById('campoPotGeneralPF').style.display=motor?'none':'block';
       document.getElementById('campoI0PF').style.display=motor?'block':'none';
-      if(document.getElementById('tipoBancoPF')) document.getElementById('tipoBancoPF').value=motor?'fijo':'automatico';
+      if(!conservarBanco && document.getElementById('tipoBancoPF')) document.getElementById('tipoBancoPF').value=motor?'fijo':'automatico';
     }
 
     function kvarComercial(q, motorIndividual){
@@ -2949,7 +2949,7 @@
       actualizarCamposNormaMotor();
       actualizarSugerenciasMotor();
       setModoMotor(localStorage.getItem('modoMotorPASIR') || 'rapido');
-      actualizarModoPF();
+      actualizarModoPF(true);
       const arranqueActual = document.getElementById('arranque')?.value;
       if (arranqueActual === 'estrella') document.getElementById('campoPosicionRele').style.display = 'block';
       toggleSocialLinks(isLocalSaveEnabled() && localStorage.getItem(STORAGE_SOCIAL_KEY) === '1');
